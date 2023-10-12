@@ -1,0 +1,132 @@
+---
+title: "data_visualization"
+author: "Michelle Johnson"
+date: "2023-10-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+```
+
+## setup functions and definitions
+```{r}
+cbFun <- c("#66b9e8", "#117733", "#c77cff", "#ff107f", "#E69F00", "#FFEA7C")
+
+getAdultData <- function(fileName){
+  full_name = paste(fileName, "_adults.csv", sep = "")
+  print(full_name)
+  read.csv(full_name) %>%
+    select(-X) %>%
+    filter(Generation != "Generation") %>%
+    transform(Count = as.numeric(Count), Generation = as.numeric(Generation))
+}
+
+getAlleleData <- function(fileName){
+  full_name = paste(fileName, "_NEWallele.csv", sep = "")
+  print(full_name)
+  read.csv(full_name) %>%
+    select(-X) %>%
+    filter(Generation != "Generation") %>%
+    transform(Count = as.numeric(Count), Generation = as.numeric(Generation))
+}
+
+getTotalData <- function(fileName){
+  full_name = paste(fileName, "_total.csv", sep = "")
+  print(full_name)
+  read.csv(full_name) %>%
+    select(-X) %>%
+    filter(Generation != "Generation") %>%
+    transform(Count = as.numeric(Count), Generation = as.numeric(Generation))
+}
+
+clean_replacement <- function(dataset, number_partners) {
+  dataset %>%
+    separate(Run, c(NA, NA, "fitCost", NA, "introF", "Run"), sep = "_", remove = T) %>%
+    mutate(numPartners = number_partners)
+} 
+
+clean_sterility <- function(dataset, number_partners) {
+  dataset %>%
+    separate(Run, c(NA, NA, "mcProb", NA, "fitCost", "Run"), sep = "_", remove = T) %>%
+    mutate(numPartners = number_partners)
+} 
+```
+
+# Replacement - 10% introduction
+
+```{r}
+# get sexless total data for each 
+total_replacement_one <- getTotalData("final_data/onePartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(., number_partners = 1)
+
+total_replacement_five <- getTotalData("final_data/fivePartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 5)
+
+total_replacement_twenty <- getTotalData("final_data/twentyPartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 20)
+
+# combine and make sexless
+total_replacement <- rbind(total_replacement_one, total_replacement_five) %>% 
+  rbind(., total_replacement_twenty) %>%
+  group_by(Generation, fitCost, introF, Run, numPartners) %>%
+  summarise(Count = sum(Count))
+
+# get sexless allele data for each
+allele_replacement_one <- getAlleleData("final_data/onePartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 1)
+
+allele_replacement_five <- getAlleleData("final_data/fivePartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 5)
+
+allele_replacement_twenty <- getAlleleData("final_data/twentyPartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 20)
+
+# combine and make sexless
+allele_replacement <- rbind(allele_replacement_one, allele_replacement_five) %>% 
+  rbind(., allele_replacement_twenty) %>% 
+  group_by(Generation, fitCost, introF, Allele, Run, numPartners) %>%
+  summarise(Allele_Count = sum(Count))
+
+```
+
+###graph!
+```{r}
+plot <- allele_replacement %>%
+  filter(Allele == "V") %>%
+  filter(introF == 0.1) %>%
+  filter(fitCost != 0.4) %>%
+  merge(., total_replacement) %>%
+  mutate(percentage = Allele_Count / (2*Count)) %>%
+  filter(percentage != 0) %>%
+  ggplot(aes(x = Generation, y = percentage, group = interaction(fitCost, Run), color = fitCost,
+             fill = fitCost)) +
+  geom_line(size = 0.6) +
+  geom_hline(aes(yintercept = 0, linetype = 1)) +
+  #geom_hline(aes(yintercept = 0.2, linetype = 3)) +
+  scale_linetype_binned() +
+  facet_wrap(~numPartners, nrow = 3, 
+             labeller = as_labeller(c(`1` = "One Partner",
+                                      `5` = "Five Partners",
+                                      `20` = "Twenty Partners"))) +
+  theme_light() +
+  #xlim(0, 35) +
+  ylab("Percent ClvR") +
+  labs(color = "Fitness Cost") +
+  scale_colour_manual(values = cbFun) +
+  scale_fill_manual(values = cbFun)
+  
+fullPlot <- plot + guides(color=guide_legend(nrow=2,byrow=TRUE)) +
+  theme(
+    strip.background = element_rect(
+    color=NULL, fill=NULL, size=0, linetype="blank"),
+    strip.text.x = element_text(angle = 0, hjust = 0),
+    text = element_text(size = 10, family = "Arial"),
+    legend.position = "bottom",
+    legend.key.width = unit(0.5, "cm"),
+    legend.margin = margin(0))
+
+fullPlot
+```
