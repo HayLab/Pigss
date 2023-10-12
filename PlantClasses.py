@@ -5,8 +5,6 @@ Description   : Performing stochastic simulations on gene drive, where individua
 are tracked. Additionally, this module uses classes to keep track of .. certain things
 
 NOTE: does not currently handle XY sex determination, only autosomal
-
-new_name: PlantClasses.py
 """
 import copy
 import numpy as np
