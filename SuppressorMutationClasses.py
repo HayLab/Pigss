@@ -179,6 +179,7 @@ class StochasticSim:
         n_ovules        -- int number of ovules per plant, similar to num_offspring
         growth_factor   -- int growth factor, represents low-density multiplier for population growth
         num_partners    -- number of males each female plant mates with
+        mutation_flag   -- mutation type flag, tells what kind of mutation you want to simulate
 
     created params / attributes:
         num_pollen      -- number of pollen each male produces
@@ -195,7 +196,7 @@ class StochasticSim:
     """
 
     def __init__(self, num_gens, alleles, intro, fitness_costs, haplo_fitness_costs, mc_prob, sterility_costs, cross_dict, gametogenesis_dict,
-                 recomb_distances, add_intro, cleave_efficiency, k, n_ovules, growth_factor, num_partners):
+                 recomb_distances, add_intro, cleave_efficiency, k, n_ovules, growth_factor, num_partners, mutation_flag):
         """given inputs, initialize a StochasticSim class object, that contains everything needed to perform a simulation"""
         self.num_ovules = n_ovules # approx. number of seeds in a seed pod
         self.num_pollen = 100 # approx. number of pollen/anther
@@ -234,6 +235,7 @@ class StochasticSim:
                             \ninput growth factor: {growth_factor} \
                             \nnumber of ovules: {self.num_ovules}')
         self.k: int = k
+        self.mutation_flag = mutation_flag
 
         self.additonal_release_list = []
         if add_intro[0] != []:
@@ -313,9 +315,17 @@ class StochasticSim:
                 # if ahplotype alleles match
                 if all_option(alleles, haploid.alleles):
                     # check rescue
-                    if (rescue_alleles != []) & all_option(rescue_alleles, haploid.parent):
-                        # rescue present! dependent on maternal carryover
-                        self.haplo_fitness[(haploid, sex)] *= self.mc_prob
+                    if (rescue_alleles != []):
+                        not_rescued = True
+                        # check all possible 
+                        for required_set in rescue_alleles:
+                            if all_option(required_set, haploid.parent):
+                                # rescue present! dependent on maternal carryover
+                                self.haplo_fitness[(haploid, sex)] *= self.mc_prob
+                                not_rescued = False
+                        if not_rescued:
+                            self.haplo_fitness[(haploid, sex)] *= (1 - fit_cost)
+                                
                     else:
                         self.haplo_fitness[(haploid, sex)] *= (1 - fit_cost)
 

@@ -414,3 +414,40 @@ male_plot <- male_plot +
 
 male_plot
 ```
+
+# Resistant Mutation - Modification
+
+```{r}
+# get sexless total data for each 
+total_replacement_one <- getTotalData("arabidopsis_data/final_data_TEST/resistant_modification_onePartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(., number_partners = 1)
+
+total_replacement_five <- getTotalData("final_data/int20_fivePartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 5)
+
+total_replacement_twenty <- getTotalData("final_data/int20_twentyPartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 20)
+
+# combine and make sexless
+total_replacement <- rbind(total_replacement_one, total_replacement_five) %>% 
+  rbind(., total_replacement_twenty) %>%
+  group_by(Generation, fitCost, introF, Run, numPartners) %>%
+  summarise(Count = sum(Count))
+
+# get sexless allele data for each
+allele_replacement_one <- getAlleleData("final_data_TEST/resistant_modification_onePartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 1)
+
+allele_replacement_five <- getAlleleData("final_data/int20_fivePartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 5)
+
+allele_replacement_twenty <- getAlleleData("final_data/int20_twentyPartner_haploidFitCosts_noSterile") %>%
+  clean_replacement(number_partners = 20)
+
+# combine and make sexless
+allele_replacement <- rbind(allele_replacement_one, allele_replacement_five) %>% 
+  rbind(., allele_replacement_twenty) %>% 
+  group_by(Generation, fitCost, introF, Allele, Run, numPartners) %>%
+  summarise(Allele_Count = sum(Count))
+
+```
