@@ -344,7 +344,8 @@ def explore_fitness_costs_diploid():
     num_gens = 100
     num_reps = 10
     intro = [[1, 0, 0.1]] # sex, genotype, frequency
-    hf_c = [[0, ['C', 'W'], 1.0, ['V']],
+    hf_c = [[0, ['C', 'W'], 1.0, ['V']], # haploid fitness costs are such that CW is lethal,
+                                         # but can be rescued by maternal carryover
             [1, ['C', 'W'], 1.0, []]]
     s_c = []
     pop_max = 10000
@@ -389,7 +390,7 @@ def onePartner_explore_fitness_costs_haploid():
                 [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
         run_label = f'clvr_cost_{clvr_cost}_intro_{intro[0][2]}'
-        run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro, f_c, hf_c, s_c, num_partners, 
+        run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro, f_c, hf_c, s_c, num_partners,
                            run_label= run_label,
                            file_name= file_name, k=POP_MAX)
 
@@ -414,7 +415,7 @@ def fivePartner_explore_fitness_costs_haploid():
                 [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
         run_label = f'clvr_cost_{clvr_cost}_intro_{intro[0][2]}'
-        run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro, f_c, hf_c, s_c, num_partners, 
+        run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro, f_c, hf_c, s_c, num_partners,
                            run_label= run_label,
                            file_name= file_name, k=POP_MAX)
 
@@ -467,7 +468,7 @@ def intro20_onePartner_explore_fitness_costs_haploid():
                 [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
         run_label = f'clvr_cost_{clvr_cost}_intro_{intro[0][2]}'
-        run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro, f_c, hf_c, s_c, num_partners, 
+        run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro, f_c, hf_c, s_c, num_partners,
                            run_label= run_label,
                            file_name= file_name, k=POP_MAX)
 
@@ -492,7 +493,7 @@ def intro20_fivePartner_explore_fitness_costs_haploid():
                 [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
         run_label = f'clvr_cost_{clvr_cost}_intro_{intro[0][2]}'
-        run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro, f_c, hf_c, s_c, num_partners, 
+        run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro, f_c, hf_c, s_c, num_partners,
                            run_label= run_label,
                            file_name= file_name, k=POP_MAX)
 
@@ -548,7 +549,7 @@ def onePartner_female_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -575,7 +576,7 @@ def fivePartner_female_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -600,7 +601,7 @@ def twentyPartner_female_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
