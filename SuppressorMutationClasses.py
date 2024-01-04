@@ -100,6 +100,10 @@ class Diploid:
         """diploids hashable by being condensed into strng"""
         return hash(str(self._genotype) + str(self._alleles))
 
+    def __str__(self) -> str:
+        """see string version of the haploid"""
+        return str(self._genotype)
+
     @property
     def genotype(self):
         return self._genotype
@@ -193,11 +197,16 @@ class StochasticSim:
         recomb_d_index_list
         adults          -- list of lists (0 = female, 1 = male)[generation] of how many of each genotype of individual exist in a generation
 
+    Can test using form:
+    object = StochasticSim(50, [['C', 'A'], ['V', 'W']], [[1, 0, 0.2]], [], [], 0, [], {}, {},
+                             [50], [[]], 0.95, 100, 30, 6, 1, "no") 
+    object = StochasticSim(50, [['C', 'A'], ['V', 'W'], ['R', 'X']], [[1, 0, 0.2]], [], [], 0, [], {}, {},
+                             [50, 1], [[]], 0.95, 100, 30, 6, 1, "recomb_dist_1"))
     """
 
     def __init__(self, num_gens, alleles, intro, fitness_costs, haplo_fitness_costs, mc_prob, sterility_costs, cross_dict, gametogenesis_dict,
                  recomb_distances, add_intro, cleave_efficiency, k, n_ovules, growth_factor, num_partners, mutation_flag):
-        """given inputs, initialize a StochasticSim class object, that contains everything needed to perform a simulation"""
+        """given inputs, initialize a StochasticSim class object, that contains everything needed to perform a simulation."""
         self.num_ovules = n_ovules # approx. number of seeds in a seed pod
         self.num_pollen = 100 # approx. number of pollen/anther
         # 100 chosen as > 2 * ovules, because we always want excess pollen
@@ -237,11 +246,18 @@ class StochasticSim:
         self.k: int = k
         self.mutation_flag = mutation_flag
 
+        self.test1 = 0
+
+        if self.mutation_flag == "recomb_dist_1":
+            self.produce_ovules = self.produce_ovules_rd
+            self.produce_pollen = self.produce_pollen_rd
+            self.test1 = 1
+
         self.additonal_release_list = []
         if add_intro[0] != []:
             for add_release in add_intro:
                 self.additonal_release_list.append([add_release[3] + add_release[4]*g for g in range(add_release[5])])
-
+        
         self.__initialize_adults(intro)
 
     def __generate_genotype(self, alleles):
@@ -341,13 +357,13 @@ class StochasticSim:
     def __update_cross_dict(self):
         """make a cross dictionary, for each haploid mother/father cross, what is the 
         diploid child?"""
-        if self.cross_dict == {}:
+        if (self.cross_dict == {}):
             for mother in self.haplotypes:
                 for father in self.haplotypes:
-                    mom_a, mom_b = mother.alleles
-                    dad_a, dad_b = father.alleles
-                    cross_genotype = [[mom_a, dad_a], [mom_b, dad_b]]
-                    cross_alleles = [mom_a, dad_a, mom_b, dad_b]
+                    mom_alleles = mother.alleles
+                    dad_alleles = father.alleles
+                    cross_genotype = [[mom_alleles[i], dad_alleles[i]] for i in range(len(mom_alleles))]
+                    cross_alleles = [allele for locus in cross_genotype for allele in locus]
                     diploid = Diploid(cross_genotype, cross_alleles)
                     self.cross_dict[(mother,father)] = self.genotypes.index(diploid)
 
@@ -547,3 +563,115 @@ class StochasticSim:
             pollen_sliced[index] = split_brood
             
         return pollen_sliced
+    
+    def produce_ovules_rd(self, mother: Diploid, mother_count: int) -> list:
+        """produces list of mother_count number of sublists, where each sublist is a set
+        of ovules
+        param:
+            mother  -- a single diploid individual, acting as a mother
+            mother_count    -- how many of those mothers exist in the population"""
+        # if mother has not been seen before, we must solve for gamete chances
+
+        # TODO: remove this variable after proven to work
+        if self.test1 == 1:
+            print("CALLED RD CORRECTLY")
+            self.test1 = 0
+        if (mother, 0) not in self.gametogenesis_dict.keys():
+            # generate list of possible gametes
+            possible_gametes = list(product(*mother.genotype))
+            # each gamete should have equal chance, by mendelian genetics
+            chance = 1 / len(possible_gametes)
+            # track all allele possibilities and their probability in a list
+            possible_gametes_list = [[alleles, chance] for alleles in possible_gametes]
+
+            # note: these modifications are for the specified arabidopsis
+            # loop through possible gametes & unpack
+            for index, [alleles, prob] in enumerate(possible_gametes_list):
+                # perform cleavage in mother
+                if ('V' in mother.alleles) & ('R' in mother.alleles) & ('A' in alleles):
+                    # get modified offspring
+                    new_alleles = ['C', alleles[1], alleles[2]]
+                    possible_gametes_list.append([new_alleles, prob * self.cleave_efficiency])
+                    # edit original offspring
+                    possible_gametes_list[index] = [alleles, prob * (1-self.cleave_efficiency)]
+            
+            # loop through every possible haplotype, giving chances for production
+            all_chances = np.zeros(len(self.haplotypes))
+            for alleles, prob in possible_gametes_list:
+                haploid = Haploid(alleles, mother.alleles)
+                all_chances[h_index] += prob
+
+            # add to dictionary
+            self.gametogenesis_dict[(mother, 0)] = all_chances
+        
+        # pull probability vector from dictionary
+        poss_gamete_chances = self.gametogenesis_dict[(mother, 0)]
+        # get number of offspring PER MOTHER
+        num_offspring = int(self.num_ovules*self.fertility[(mother,0)])
+        # randomly choose offspring for ALL mothers
+        ovules = rng.choice(self.haplotypes, size=num_offspring*mother_count, p = poss_gamete_chances)
+        # split ovules into subsets, one grouped list for each individal
+        ovules_sliced = [list(ovules[num_offspring*x:num_offspring*(x+1)]) for x in range(mother_count)]
+            
+        return ovules_sliced
+    
+    def produce_pollen_rd(self, father: Diploid, father_count: int) -> list:
+        """produces list of father_count number of sublists, where each sublist has self.num_partners
+        sub-sublists, and each sub-sublist is a set of pollen
+        param:
+            father  -- single diploid invididual, acting as father
+            father_count    -- how many of these fathers exist in the population"""
+        # if father has not been seen before, we must solve for gamete chances
+        if (father, 1) not in self.gametogenesis_dict.keys():
+            # generate list of possible gametes
+            possible_gametes = list(product(*father.genotype))
+            # each gamete should have equal chance, by mendelian genetics
+            chance = 1 / len(possible_gametes)
+            # track all allele possibilities and their probability in a list
+            possible_gametes_list = [[alleles, chance] for alleles in possible_gametes]
+
+            # note: these modifications are for the specified arabidopsis
+            # loop through possible gametes & unpack
+            for index, [alleles, prob] in enumerate(possible_gametes_list):
+                # perform cleavage in mother
+                if ('V' in father.alleles) & ('R' in father.alleles) & ('A' in alleles):
+                    # get modified offspring
+                    new_alleles = ['C', alleles[1], alleles[2]]
+                    possible_gametes_list.append([new_alleles, prob * self.cleave_efficiency])
+                    # edit original offspring
+                    possible_gametes_list[index] = [alleles, prob * (1-self.cleave_efficiency)]
+            
+            # loop through every possible haplotype, giving chances for production
+            all_chances = np.zeros(len(self.haplotypes))
+            for alleles, prob in possible_gametes_list:
+                haploid = Haploid(alleles, father.alleles)
+                # we may have generated new haploids by modification above: add those here
+                h_index = self.haplotypes.index(haploid)
+                all_chances[h_index] += prob
+
+            # add to dictionary
+            self.gametogenesis_dict[(father, 1)] = all_chances
+        
+        # pull probability vector from dictionary
+        poss_gamete_chances = self.gametogenesis_dict[(father, 1)]
+        # randomly choose offspring PER FATHER
+        num_offspring = int(self.num_pollen*self.fertility[(father,1)])
+        # randomly choose offspring for ALL FATHERS
+        pollen = rng.choice(self.haplotypes, size=num_offspring*father_count, p = poss_gamete_chances)
+
+        # remove empty sets
+        while [] in pollen:
+            pollen.remove([])
+
+        # split pollen into subsets
+        pollen_sliced = [list(pollen[num_offspring*x:num_offspring*(x+1)]) for x in range(father_count)]
+
+        # split subsets (broods) into buckets
+        for index, brood in enumerate(pollen_sliced):
+            bucket_len = len(brood)/self.num_partners
+            split_brood = [brood[int(x*bucket_len):int((x+1)*bucket_len)]
+                           for x in range(self.num_partners)]
+            pollen_sliced[index] = split_brood
+            
+        return pollen_sliced
+    
