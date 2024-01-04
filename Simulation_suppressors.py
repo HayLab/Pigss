@@ -336,7 +336,7 @@ def stochastic_sim(Simulation: StochasticSim, label):
 
 
 ##########################################
-############ haploid fit costs ###########
+######### population modification ########
 ##########################################
 
 def resistant_modification_onePartner_haploid_fc():
@@ -506,6 +506,8 @@ def RM_manypercents_onePartner_haploid_fc2():
 ############ female sterility ############
 ##########################################
 
+#region female sterility
+
 def resistant_suppression_femalesterile_onePartner_MC():
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
@@ -618,7 +620,6 @@ def RS_01percent_femalesterile_onePartner_MC():
 
     return None
 
-
 def int20_resistant_suppression_femalesterile_onePartner_MC():
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
@@ -647,6 +648,7 @@ def int20_resistant_suppression_femalesterile_onePartner_MC():
 
     return None
 
+# region clvr loss of function
 
 def lof_clvr_suppression_femalesterile_onePartner_MC():
     """runs simulations for multiple maternal carryovers and various haploid 
@@ -740,6 +742,50 @@ def lof_clvr_suppression_femalesterile_twentyPartner_MC():
                             file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
+
+# endregion clvr loss of function
+
+# region recombination distance
+
+def rd_clvr_suppression_fs_onePartner():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'A'], ['V', 'W'], ['R', 'X']] # cleavable allele, clvr, grna/cargo 
+    intro = [[1, 0, 0.1]] # release of homozygous males at 10% population frequency
+    s_c = [[0, ['V', 'V'], 1.0],
+           [0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    
+    r_d = [50, 1]
+
+    ## note: here, an individual that has a V on one chromosome and an R on the second is NOT sterile
+
+    f_c = []
+
+    file_name = "mutation_data/rd_1_suppression_onePartner_femSterile"
+
+    for maternal_carryover in [0, 0.1, 0.2, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15, 0.2]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W', 'X'], 1.0, [['R']]],
+                    [1, ['C', 'W', 'X'], 1.0, []],
+                    [0, ['C', 'V', 'X'], 1.0, [['R']]],
+                    [1, ['C', 'V', 'X'], 1.0, []], # maternal resuce happens via 'R'
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            r_d= r_d,
+                            mut_flag= "recomb_dist_1", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
+#endregion recombination distance
+
+# endregion female sterility
 
 ##########################################
 ############# male sterility #############

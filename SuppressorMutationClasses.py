@@ -599,6 +599,8 @@ class StochasticSim:
             all_chances = np.zeros(len(self.haplotypes))
             for alleles, prob in possible_gametes_list:
                 haploid = Haploid(alleles, mother.alleles)
+                # we may have generated new haploids by modification above: add those here
+                h_index = self.haplotypes.index(haploid)
                 all_chances[h_index] += prob
 
             # add to dictionary
