@@ -756,7 +756,7 @@ def rd_clvr_suppression_fs_onePartner():
     s_c = [[0, ['V', 'V'], 1.0],
            [0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
     
-    r_d = [50, 1]
+    recomb_d = [[50, 1], [50, 1]]
 
     ## note: here, an individual that has a V on one chromosome and an R on the second is NOT sterile
 
@@ -777,7 +777,7 @@ def rd_clvr_suppression_fs_onePartner():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, 
-                            r_d= r_d,
+                            r_d= recomb_d,
                             mut_flag= "recomb_dist_1", run_label= run_label,
                             file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 

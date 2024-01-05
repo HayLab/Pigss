@@ -368,29 +368,17 @@ class StochasticSim:
                     self.cross_dict[(mother,father)] = self.genotypes.index(diploid)
 
     def __edit_recomb_distances(self, r_d):
-        """ Generate recombination distances list, given recombination distances list"""
-        # NOTE: unused
-        # Set recombination rates based on recombination distances for females and males
-        if isinstance(r_d[0], int) and len(r_d) == self.n_recomb_distances:
-            r_d_temp = [float(r) for r in r_d]
-            r_d = [r_d_temp, r_d_temp]
-        elif isinstance(r_d[0], float) and len(r_d) == self.n_recomb_distances:
-            r_d_temp = r_d
-            r_d = [r_d_temp, r_d_temp]
-        elif isinstance(r_d[0], list):
-            if len(r_d[0]) == len(r_d[1]) == self.n_recomb_distances:
-                err = 'NA'
-            else:
-                err = 'throw error: must have the same number of recombination rates for each sex'
-        else:
-            err = 'throw error: r_d must be either a single list or a pair of lists of \
-            length equal to the number of recombination distances'
+        """ Generate recombination distances list, given recombination distances list.
+        This is for HAPLOID recombinations"""
+        # Set recombination rates based on recombination distances, for HAPLOID !
+        # r_d should take the form [recombination distance between L1 & L2,
+        #                           recombination distance between L2 & L3, etc.]
 
         # begin setting up recombination distances list
         r_d_full = []
-        # TODO: Fully comment based on "code line by line" notes
-        if self.n_recomb_distances > 0:
-            for rec in r_d:
+
+        if self.n_recomb_distances > 0: #if we have multiple loci
+            for rec in r_d: # for each possible recombination
                 r_d_temp = []
                 [r_d_temp.append([0.5 + 0.5*(1-r/50), 0.5*(r/50)]) for r in rec]
                 r_d_full.append(r_d_temp)
@@ -401,12 +389,18 @@ class StochasticSim:
             for rec in r_d_full[2:4]:
                 r_d_full.append([np.prod(rd) for rd in rec])
 
-            r_d_full.append(list(product(*r_d_full[4:6])))
-            r_d_full.append([np.prod(rd) for rd in r_d_full[6]])
+            for rec in r_d_full[4:6]:
+                r_d_full.append([rd / 2 for rd in rec])
+            # sum of all possibilities must be 1/2, not 1
+            # because there are two ways to do each
+                # you can co-inherit by giving both from your mom
+                # OR by giving both from your dad
+            
         else:
             r_d_full = [[1]]*8
 
         self.recomb_d_index_list = r_d_full[7]
+        print(self.recomb_d_index_list)
 
     def __initialize_adults(self, intro):
         """list of lists. Each list is a sex, first female second is male.
@@ -579,10 +573,24 @@ class StochasticSim:
         if (mother, 0) not in self.gametogenesis_dict.keys():
             # generate list of possible gametes
             possible_gametes = list(product(*mother.genotype))
-            # each gamete should have equal chance, by mendelian genetics
-            chance = 1 / len(possible_gametes)
+            possible_gametes_inds = list(product_index(*mother.genotype))
+
+            possible_gametes_list = []
+
             # track all allele possibilities and their probability in a list
-            possible_gametes_list = [[alleles, chance] for alleles in possible_gametes]
+            # probabilities based on recombination distance
+            for index, gamete in enumerate(possible_gametes):
+                gam_inds = possible_gametes_inds[index]
+                r_d_ind = ''
+                for r_event in range(self.n_recomb_distances):
+                    if gam_inds[r_event] == gam_inds[r_event+1]:
+                        r_d_ind += '0'
+                    else:
+                        r_d_ind += '1'
+
+                chance = self.recomb_d_index_list[int(r_d_ind, 2)]
+                possible_gametes_list.append([gamete, chance])
+
 
             # note: these modifications are for the specified arabidopsis
             # loop through possible gametes & unpack
@@ -627,10 +635,23 @@ class StochasticSim:
         if (father, 1) not in self.gametogenesis_dict.keys():
             # generate list of possible gametes
             possible_gametes = list(product(*father.genotype))
-            # each gamete should have equal chance, by mendelian genetics
-            chance = 1 / len(possible_gametes)
+            possible_gametes_inds = list(product_index(*father.genotype))
+
+            possible_gametes_list = []
+
             # track all allele possibilities and their probability in a list
-            possible_gametes_list = [[alleles, chance] for alleles in possible_gametes]
+            # probabilities based on recombination distance
+            for index, gamete in enumerate(possible_gametes):
+                gam_inds = possible_gametes_inds[index]
+                r_d_ind = ''
+                for r_event in range(self.n_recomb_distances):
+                    if gam_inds[r_event] == gam_inds[r_event+1]:
+                        r_d_ind += '0'
+                    else:
+                        r_d_ind += '1'
+
+                chance = self.recomb_d_index_list[int(r_d_ind, 2)]
+                possible_gametes_list.append([gamete, chance])
 
             # note: these modifications are for the specified arabidopsis
             # loop through possible gametes & unpack
