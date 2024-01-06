@@ -205,7 +205,7 @@ class StochasticSim:
     """
 
     def __init__(self, num_gens, alleles, intro, fitness_costs, haplo_fitness_costs, mc_prob, sterility_costs, cross_dict, gametogenesis_dict,
-                 recomb_distances, add_intro, cleave_efficiency, k, n_ovules, growth_factor, num_partners, mutation_flag):
+                 recomb_distances, add_intro, cleave_efficiency, k, n_ovules, growth_factor, num_partners, mutation_flag, FC_flag):
         """given inputs, initialize a StochasticSim class object, that contains everything needed to perform a simulation."""
         self.num_ovules = n_ovules # approx. number of seeds in a seed pod
         self.num_pollen = 100 # approx. number of pollen/anther
@@ -224,7 +224,10 @@ class StochasticSim:
         self.fertility: dict = {}
         # must generate fitness&fertility first, because generate genotype fills them with 1's
         self.__generate_genotype(alleles)
-        self.__edit_fitnesses(fitness_costs)
+        if FC_flag == "additive":
+            self.__edit_fitnesses_additive(fitness_costs)
+        else:
+            self.__edit_fitnesses(fitness_costs)
         self.haplo_fitness_costs = haplo_fitness_costs
         self.mc_prob = mc_prob
         self.__edit_haplo_fitnesses()
@@ -314,6 +317,21 @@ class StochasticSim:
                     # no rescue option:
                     self.fitness[sex][index] *= (1 - fit_cost)
 
+    def __edit_fitnesses_additive(self, f_c):
+        """edit_fitnesses, but for recessive fitness costs"""
+        # make lists appropriate lengths
+        self.fitness = [[1.0]*len(self.genotypes), [1.0]*len(self.genotypes)]
+        # iterate through all haploid fitness costs
+        for sex, alleles, fit_cost, rescue_alleles in f_c:
+            # iterate through all genotypes
+            for index, diploid in enumerate(self.genotypes):
+                # if ahplotype alleles match
+                if all_option(alleles, diploid.alleles):
+                    # no rescue option:
+                    self.fitness[sex][index] *= (1 - fit_cost*diploid.alleles.count(alleles[0]))
+
+
+
     def __edit_haplo_fitnesses(self):
         """creates list mapping genotypes to fitness costs IN HAPLOIDS
             hf_c --list of fitness costs [sex, required alleles, fitness cost]
@@ -400,7 +418,6 @@ class StochasticSim:
             r_d_full = [[1]]*8
 
         self.recomb_d_index_list = r_d_full[7]
-        print(self.recomb_d_index_list)
 
     def __initialize_adults(self, intro):
         """list of lists. Each list is a sex, first female second is male.

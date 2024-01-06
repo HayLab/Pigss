@@ -530,6 +530,117 @@ RM_manyPercents %>%
 ```
 
 
+One Partner RM, but for Diploid vs. Haploid vs. Haploid&Diploid fitness costs
+```{r}
+fig <- get_RM_data(
+  "final_data/onePartner_haploidFitCosts_noSterile",
+  "12-15/mutation_data/resistant_modification_onePartner_haploidFitCosts_noSterile",
+  "no RM, one partner",
+  "20% RM, one partner. Haploid FC") %>%
+  filter(Allele == "V") %>%
+  filter(fitCost != 0.4, fitCost != 0.2) %>%
+  mutate(percentage = Allele_Count / (2*Count)) %>%
+  group_by(Generation, fitCost, introF, numPartners, Allele) %>%
+  summarise(avg_percentage = mean(percentage)) %>%
+  filter(avg_percentage != 0) %>%
+  ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
+             fill = fitCost)) +
+  geom_line(size = 0.8) +
+  scale_linetype_binned() +
+  facet_wrap(~numPartners, ncol = 3) + #, 
+             #labeller = as_labeller(c(`1` = "One Partner",
+            #                          `5` = "Five Partners",
+            #                          `20` = "Twenty Partners"))) +
+  theme_light() +
+  ylab("Percent ClvR") +
+  labs(color = "Fitness Cost") +
+  scale_colour_manual(values = cbFun) +
+  scale_fill_manual(values = cbFun) + xlim(NA, 40)
+fig
+
+fig <- get_RM_data(
+  "1-4/RM_manypercents_onePartner_diploidFitCosts_noSterile",
+  "1-4/RM_manypercents_onePartner_diploidHaploidFitCosts_noSterile",
+  "20% RM, Diploid FC",
+  "20% RM, Diploid and Haploid FC") %>%
+  filter(Allele == "V") %>%
+  filter(fitCost != 0.4, fitCost != 0.2) %>%
+  mutate(percentage = Allele_Count / (2*Count)) %>%
+  group_by(Generation, fitCost, introF, numPartners, Allele) %>%
+  summarise(avg_percentage = mean(percentage)) %>%
+  filter(avg_percentage != 0) %>%
+  ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
+             fill = fitCost)) +
+  geom_line(size = 0.8) +
+  scale_linetype_binned() +
+  facet_wrap(~numPartners, ncol = 3) + #, 
+             #labeller = as_labeller(c(`1` = "One Partner",
+            #                          `5` = "Five Partners",
+            #                          `20` = "Twenty Partners"))) +
+  theme_light() +
+  ylab("Percent ClvR") +
+  labs(color = "Fitness Cost") +
+  scale_colour_manual(values = cbFun) +
+  scale_fill_manual(values = cbFun) + xlim(NA, 40)
+fig
+```
+
+5p, of above
+```{r}
+fig <- get_RM_data(
+  "final_data/fivePartner_haploidFitCosts_noSterile",
+  "1-4/RM_manypercents_fivePartner_haploidFitCosts_noSterile2",
+  "no RM, five partner",
+  "20% RM, five partner. Haploid FC") %>%
+  filter(Allele == "V") %>%
+  filter(ifelse(numPartners == "20% RM, five partner. Haploid FC", introF == 0.2, TRUE)) %>%
+  filter(fitCost != 0.4, fitCost != 0.2) %>%
+  mutate(percentage = Allele_Count / (2*Count)) %>%
+  group_by(Generation, fitCost, introF, numPartners, Allele) %>%
+  summarise(avg_percentage = mean(percentage)) %>%
+  filter(avg_percentage != 0) %>%
+  ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
+             fill = fitCost)) +
+  geom_line(size = 0.8) +
+  scale_linetype_binned() +
+  facet_wrap(~numPartners, ncol = 3) + #, 
+             #labeller = as_labeller(c(`1` = "One Partner",
+            #                          `5` = "Five Partners",
+            #                          `20` = "Twenty Partners"))) +
+  theme_light() +
+  ylab("Percent ClvR") +
+  labs(color = "Fitness Cost") +
+  scale_colour_manual(values = cbFun) +
+  scale_fill_manual(values = cbFun) + xlim(NA, 40)
+fig
+
+fig <- get_RM_data(
+  "1-4/RM_manypercents_fivePartner_diploidFitCosts_noSterile",
+  "1-4/RM_manypercents_fivePartner_diploidHaploidFitCosts_noSterile",
+  "20% RM, Diploid FC",
+  "20% RM, Diploid and Haploid FC") %>%
+  filter(Allele == "V") %>% filter(introF == 0.2) %>%
+  filter(fitCost != 0.4, fitCost != 0.2) %>%
+  mutate(percentage = Allele_Count / (2*Count)) %>%
+  group_by(Generation, fitCost, introF, numPartners, Allele) %>%
+  summarise(avg_percentage = mean(percentage)) %>%
+  filter(avg_percentage != 0) %>%
+  ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
+             fill = fitCost)) +
+  geom_line(size = 0.8) +
+  scale_linetype_binned() +
+  facet_wrap(~numPartners, ncol = 3) + #, 
+             #labeller = as_labeller(c(`1` = "One Partner",
+            #                          `5` = "Five Partners",
+            #                          `20` = "Twenty Partners"))) +
+  theme_light() +
+  ylab("Percent ClvR") +
+  labs(color = "Fitness Cost") +
+  scale_colour_manual(values = cbFun) +
+  scale_fill_manual(values = cbFun) + xlim(NA, 40)
+fig
+```
+
 
 
 ## Suppression
@@ -729,7 +840,143 @@ lof_1pmaleG %>%
   geom_line() + facet_wrap(~Genotype) + labs(title = "females")
 ```
 
+Reduced Introduction Frequencies
+```{r}
+get_RS_data("1-4/lof_clvr_if1_suppression_onePartner_femSterile",
+            "12-15/mutation_data/lof_clvr_suppression_onePartner_femSterile",
+            "1% LOF clvr",
+            "10% LOF clvr") %>%
+  graph_RS_data()
 
+get_RS_data("1-4/lof_clvr_if2_suppression_onePartner_femSterile",
+            "1-4/lof_clvr_if5_suppression_onePartner_femSterile",
+            "2% LOF clvr",
+            "5% LOF clvr") %>%
+  graph_RS_data()
+
+get_RS_data("1-4/lof_clvr_if2_suppression_fivePartner_femSterile",
+            "12-15/mutation_data/lof_clvr_suppression_fivePartner_femSterile",
+            "2% LOF clvr",
+            "10% LOF clvr") %>%
+  graph_RS_data() + labs(title = "5 partner")
+
+get_RS_data("final_data/fivePartner_female_sterility",
+            "1-4/lof_clvr_if2_suppression_fivePartner_femSterile",
+            "no lof",
+            "2% lof clvr") %>%
+  graph_RS_data() + labs(title = "5 partner")
+
+get_RS_data("1-4/lof_clvr_if2_suppression_twentyPartner_femSterile",
+            "12-15/mutation_data/lof_clvr_suppression_twentyPartner_femSterile",
+            "2% LOF clvr",
+            "10% LOF clvr") %>%
+  graph_RS_data() + labs(title = "20 partner")
+
+get_RS_data("final_data/twentyPartner_female_sterility",
+            "1-4/lof_clvr_if2_suppression_twentyPartner_femSterile",
+            "no lof",
+            "2% lof clvr") %>%
+  graph_RS_data() + labs(title = "20 partner")
+```
+
+# Recombination distance
+
+Get and Graph, using previous RS functions - one partner
+```{r}
+fig <- get_RS_data("final_data/onePartner_female_sterility",
+            "1-4/rd_1_suppression_onePartner_femSterile",
+            "1: no rd",
+            "1: 1 rd") %>%
+  graph_RS_data()
+fig
+
+allele_rd <- getAlleleData("1-4/rd_1_suppression_onePartner_femSterile") %>%
+  clean_sterility(., number_partners = 1) %>%
+  mutate(Allele = factor(Allele, levels = c("C", "A", "V", "W", "R", "X")))
+
+allele_rd %>% filter(fitCost == 0, mcProb == 0, Run == 1) %>%
+  ggplot(aes(x = Generation, y = Count, group = interaction(Sex, Run), color = Sex)) +
+  geom_line() +
+  facet_wrap(~Allele) + xlim(0, 30) + labs(title = "Run 1")
+
+get_RS_data("final_data/onePartner_female_sterility",
+            "1-4/rd_5_suppression_onePartner_femSterile",
+            "1: no rd",
+            "1: 5 rd") %>%
+  graph_RS_data()
+
+fig <- getTotalData("1-4/rd_5_suppression_onePartner_femSterile") %>%
+     clean_sterility(., number_partners = "rd 5") %>%
+  filter(mcProb %in% c(0, 0.3)) %>%
+  group_by(Generation, mcProb, fitCost, Run, numPartners) %>%
+  summarize(Count = sum(Count)) %>%
+  ggplot(aes(x = Generation, y = Count, group = interaction(fitCost, mcProb, Run), color = fitCost)) +
+  geom_line(size = 0.8) +
+  facet_wrap(~mcProb, ncol = 3) + #,
+             #labeller = as_labeller(c(`1` = "One Partner",
+            #                          `5` = "Five Partners",
+            #                          `20` = "Twenty Partners"))) +
+  labs(y = "Total Population",
+       color = "Fitness Cost") +
+  ylim(0, 10000) +
+  scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
+  theme_light() +
+  #xlim(0, 30) +
+  scale_colour_manual(values = cbFun)
+fig
+
+allele_rd <- getAlleleData("1-4/rd_5_suppression_onePartner_femSterile") %>%
+  clean_sterility(., number_partners = 1) %>%
+  mutate(Allele = factor(Allele, levels = c("C", "A", "V", "W", "R", "X")))
+
+allele_rd %>% filter(fitCost == 0.15, mcProb == 0, Run == 1) %>%
+  ggplot(aes(x = Generation, y = Count, group = interaction(Sex, Run), color = Sex)) +
+  geom_line() +
+  facet_wrap(~Allele) + xlim(0, 50) + labs(title = "Run 1, FC 15%")
+```
+
+Five and Twenty Partners
+```{r}
+fig <- getTotalData("1-4/rd_1_suppression_fivePartner_femSterile") %>%
+     clean_sterility(., number_partners = "rd 5") %>%
+  filter(mcProb %in% c(0, 0.3)) %>%
+  group_by(Generation, mcProb, fitCost, Run, numPartners) %>%
+  summarize(Count = sum(Count)) %>%
+  ggplot(aes(x = Generation, y = Count, group = interaction(fitCost, mcProb, Run), color = fitCost)) +
+  geom_line(size = 0.8) +
+  facet_wrap(~mcProb, ncol = 3) + #,
+             #labeller = as_labeller(c(`1` = "One Partner",
+            #                          `5` = "Five Partners",
+            #                          `20` = "Twenty Partners"))) +
+  labs(y = "Total Population, 5 partner",
+       color = "Fitness Cost") +
+  ylim(0, 10000) +
+  scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
+  theme_light() +
+  #xlim(0, 30) +
+  scale_colour_manual(values = cbFun)
+fig
+
+fig <- getTotalData("1-4/rd_1_suppression_twentyPartner_femSterile") %>%
+     clean_sterility(., number_partners = "rd 5") %>%
+  filter(mcProb %in% c(0, 0.3)) %>%
+  group_by(Generation, mcProb, fitCost, Run, numPartners) %>%
+  summarize(Count = sum(Count)) %>%
+  ggplot(aes(x = Generation, y = Count, group = interaction(fitCost, mcProb, Run), color = fitCost)) +
+  geom_line(size = 0.8) +
+  facet_wrap(~mcProb, ncol = 3) + #,
+             #labeller = as_labeller(c(`1` = "One Partner",
+            #                          `5` = "Five Partners",
+            #                          `20` = "Twenty Partners"))) +
+  labs(y = "Total Population, 20 partner",
+       color = "Fitness Cost") +
+  ylim(0, 10000) +
+  scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
+  theme_light() +
+  #xlim(0, 30) +
+  scale_colour_manual(values = cbFun)
+fig
+```
 
 
 # drive with benefit, vs. drive without benefit, one partner
