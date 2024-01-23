@@ -183,8 +183,8 @@ def stochastic_sim(Simulation: StochasticSim, label):
             pairs = np.zeros((num_haplos, num_haplos))
             for ovules in grouped_ovules:
                 # remove empty fathers
-                while [] in grouped_pollens:
-                    grouped_pollens.remove([])
+                #while [] in grouped_pollens:
+                #    grouped_pollens.remove([])
 
                 # when females are the introduced population, may lead to 
                 #   more females than males, leading to not enough matings
@@ -206,12 +206,20 @@ def stochastic_sim(Simulation: StochasticSim, label):
                     father_indexes = range(start_pos, start_pos + Simulation.num_partners)
                     pollens = np.zeros(num_haplos)
 
+                    to_remove = []
                     # loop through 'fathers' to pool all pollens
                     for index in father_indexes:
                         father = grouped_pollens[index]
                         bucket = father.pop(0)
                         for pollen in bucket:
                             pollens[pollen] += 1
+                        if grouped_pollens[index] == []:
+                            to_remove.append(index)
+
+                    # remove empty fathers
+                    to_remove.sort(reverse = True)
+                    for index in to_remove:
+                        del grouped_pollens[index]
 
                     ###### apply fitness costs ##############
                     """# get random integers
