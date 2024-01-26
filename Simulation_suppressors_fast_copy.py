@@ -182,19 +182,26 @@ def stochastic_sim(Simulation: StochasticSim, label):
             pairs = np.zeros((num_haplos, num_haplos))
 
             # we assume every female gets mated
-            for mother_index, value in enumerate(mother_counts):
+            nonzero_mothers = mother_counts.nonzero()[0]
+            for mother_index in nonzero_mothers:
+                # pull values
+                num_mothers = mother_counts[mother_index]
                 fem_fertility = Simulation.fertility[(mother_index,0)]
+
+                # generate ovules
+                ovule_probs = Simulation.get_gametes(0, mother_index)
+                num_offspring = int(Simulation.num_ovules * fem_fertility * sum(ovule_probs))
+                normalized_ovule_probs = ovule_probs / sum(ovule_probs)
+
+                total_ovules = rng.choice(range(num_haplos), num_offspring*int(num_mothers),
+                                    p = normalized_ovule_probs)
+                
+                ovules_sliced = [total_ovules[num_offspring*x:num_offspring*(x+1)] for x in range(int(num_mothers))]
+
                 # perform a mating for each female
-                for mating in range(int(value)):
-                    father_indices = fathers_long[:Simulation.num_partners]
-                    del fathers_long[:Simulation.num_partners]
-                    
-                    # generate ovules
-                    ovule_probs = Simulation.get_gametes(0, mother_index)
-                    num_offspring = int(Simulation.num_ovules * fem_fertility * sum(ovule_probs))
-                    normalized_ovule_probs = ovule_probs / sum(ovule_probs)
-                    ovules = rng.choice(range(num_haplos), num_offspring,
-                                        p = normalized_ovule_probs)
+                for partner_index, ovules in enumerate(ovules_sliced):
+                    father_indices = fathers_long[partner_index * Simulation.num_partners:
+                                                  Simulation.num_partners * (partner_index + 1)]
                     
                     # get total pollen distribution given fathers
                     father_key = array_to_int(father_indices)
@@ -215,6 +222,7 @@ def stochastic_sim(Simulation: StochasticSim, label):
                     pollen_probs = Simulation.father_pdfs[father_key]
                     pollens = rng.choice(range(num_haplos), num_offspring,
                                          p = pollen_probs)
+                    
                     for index, ovule in enumerate(ovules):
                         pollen = pollens[index]
                         pairs[ovule][pollen] += 1
@@ -346,6 +354,12 @@ def array_to_int(array):
 
     return int(string_num)
 
+def pdf_to_cdf(array):
+    out = [array[0]]
+    for value in array[1:]:
+        out.append(out[-1] + value)
+    return out
+
 
 def mating(Simulation, num_haplos, pollens, ovules, pairs):
 
@@ -456,17 +470,17 @@ def RS_o01percent_femalesterile_onePartner_MC():
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
     alleles = [['C', 'R', 'A'], ['V', 'W']] # a resistance allele is uncleavable
-    intro = [[1, 0, 0.1]] #, [0, 23, 0.00005], [1, 23, 0.00005]] # sex, genotype, frequency
+    intro = [[1, 0, 0.1], [0, 23, 0.00005], [1, 23, 0.00005]] # sex, genotype, frequency
     # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
     s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
     f_c = []
 
-    file_name = "large_pop/small_pop_profile"
+    file_name = "large_pop/small_pop_profile_CONFUSED_1000000.2"
     num_reps_test = 1
     num_gens_test = 50
     #"mutation_data/RS_o01percent_onePartner_femSterile"
 
-    K = 10000 #000 # 1 000 000
+    K = 1000000 #000 # 1 000 000
 
     for maternal_carryover in [0]: #, 0.3]:
         for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
