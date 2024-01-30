@@ -12,6 +12,7 @@ import random
 import time
 import copy
 import pandas as pd
+from multiprocessing import Process, Queue, Pool, cpu_count
 from tqdm import tqdm
 from SuppressorMutationClasses_fast import *
 
@@ -111,7 +112,7 @@ def run_stochastic_sim(alleles, num_reps,
     print(f'appended {run_label} to file {file_name}')
     return None
 
-@profile
+#@profile
 def stochastic_sim(Simulation: StochasticSim, label):
     """ function that performs a stochastic simulation: Just the loop through the generations!
      Everything else should be handled prior to that.
@@ -181,6 +182,7 @@ def stochastic_sim(Simulation: StochasticSim, label):
             start_pos = len(grouped_pollens)
 
             pairs = np.zeros((num_haplos, num_haplos))
+
             for ovules in grouped_ovules:
                 # remove empty fathers
                 #while [] in grouped_pollens:
@@ -221,6 +223,7 @@ def stochastic_sim(Simulation: StochasticSim, label):
                     for index in to_remove:
                         del grouped_pollens[index]
 
+
                     ###### apply fitness costs ##############
                     """# get random integers
                     rand_floats = rng.random(len(pollens))
@@ -230,8 +233,7 @@ def stochastic_sim(Simulation: StochasticSim, label):
 
                     surviving_pollens = np.zeros(num_haplos) # a list of len [number of types of pollens],
                                           # where each value is how many of that pollen exist in the population
-                    #lower = 0.0
-                    #upper = 1.0
+                    
                     options = np.array(pollens).nonzero()[0]
                     for index in options:
                         amount = pollens[index]
@@ -271,46 +273,60 @@ def stochastic_sim(Simulation: StochasticSim, label):
                         mu = Simulation.haplo_fitness[(ovule, 1)]
                         surviving_ovules[index] = round(mu * amount)
 
+                    amount_pollen = sum(surviving_pollens)
+                    amount_ovule = sum(surviving_ovules)
+
                     # select mating pollens
                     sperm = np.zeros(num_haplos)
                     # note: there should ALWAYS be an excess of pollen
-                    if sum(surviving_pollens) >= sum(surviving_ovules):
+                    if amount_pollen >= amount_ovule:
                         #sperm = list(rng.choice(surviving_pollens, len(surviving_ovules),
                         #                        replace = False))
                         options = surviving_pollens.nonzero()[0]
-                        ratio = sum(surviving_ovules) / sum(surviving_pollens)
+                        ratio = amount_ovule / amount_pollen
                         for index in options:
                             sperm[index] = round(surviving_pollens[index] * ratio)
-                        while sum(sperm) > sum(surviving_ovules):
+                        while sum(sperm) > amount_ovule:
                             options = np.array(surviving_pollens).nonzero()[0]
                             sperm[rng.choice(options)] += -1
 
-                        while sum(sperm) < sum(surviving_ovules):
+                        while sum(sperm) < amount_ovule:
                             options = np.array(surviving_pollens).nonzero()[0]
                             sperm[rng.choice(options)] += 1
                     else:
                         # the only case where this should not be true, is if males infertile.
                         sperm = surviving_pollens
 
-                    """for index, single_sperm in enumerate(sperm):
-                        mother_egg = surviving_ovules[index]
-                        father_sperm = single_sperm
-                        individual_index = Simulation.cross_dict[(mother_egg, father_sperm)]
-                        temp_adults[individual_index] += 1"""
-
                     sperm_long = [y for index, count in enumerate(sperm) for y in [index] * int(count)]
                     ovules_long = [y for index, count in enumerate(surviving_ovules) for y in [index] * int(count)]
-                    random.shuffle(ovules_long)
-                    if len(sperm_long) != sum(sperm):
-                        print("BIGTIME ERROR")
-                    if len(ovules_long) != sum(surviving_ovules):
-                        print("BIGTIME ERROR")
+                    rng.shuffle(ovules_long)
+                        
+
+
                     for index, single_sperm in enumerate(sperm_long):
                         # number of sperm should be equal to or less than number of ovules, so
                         # as long as ovules/eggs are shuffled, it shouldn't matter if the
                         # sperm list is shuffled or not !
                         egg_index = ovules_long[index]
                         pairs[egg_index][single_sperm] += 1
+                        
+                    # sperm_options = sperm.nonzero()[0]
+                    # egg_options = surviving_ovules.nonzero()[0]
+
+                    # for i in range(int(sum(sperm))):
+                    #     rng.shuffle(egg_options)
+                    #     egg_index = egg_options[0]
+                    #     sperm_index = sperm_options[0]
+
+                    #     surviving_ovules[egg_index] += -1
+                    #     if surviving_ovules[egg_index] == 0:
+                    #         egg_options = egg_options[1:]
+
+                    #     sperm[sperm_index] += -1
+                    #     if sperm[sperm_index] == 0:
+                    #         sperm_options = sperm_options[1:]
+
+                    #     pairs[egg_index][sperm_index] += 1
 
             mothers, fathers = pairs.nonzero()
             for i in range(len(mothers)):
@@ -429,6 +445,7 @@ def stochastic_sim(Simulation: StochasticSim, label):
     return(df_adults, df_alleles, df_total, Simulation)
 
 
+
 ##########################################
 ######### population modification ########
 ##########################################
@@ -438,17 +455,16 @@ def RS_o01percent_femalesterile_onePartner_MC():
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
     alleles = [['C', 'R', 'A'], ['V', 'W']] # a resistance allele is uncleavable
-    intro = [[1, 0, 0.1], [0, 23, 0.00005], [1, 23, 0.00005]] # sex, genotype, frequency
+    intro = [[1, 0, 0.1]] #, [0, 23, 0.00005], [1, 23, 0.00005]] # sex, genotype, frequency
     # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
     s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
     f_c = []
 
-    file_name = "large_pop/small_pop_profile"
-    num_reps_test = 1
+    file_name = "large_pop/small_pop_profile_CONFUSED_correct" #"mutation_data/RS_o01percent_onePartner_femSterile"
+    num_reps_test = 20
     num_gens_test = 50
-    #"mutation_data/RS_o01percent_onePartner_femSterile"
 
-    K = 100000 #000 # 1 000 000
+    K = 10000 # 100 / 1000000 = 10^-4
 
     for maternal_carryover in [0]: #, 0.3]:
         for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
@@ -466,7 +482,7 @@ def RS_o01percent_femalesterile_onePartner_MC():
 
     return None
 
-def RS_o001percent_femalesterile_onePartner_MC():
+def RS_o001percent_femalesterile_onePartner_MC(run):
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1

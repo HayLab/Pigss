@@ -110,6 +110,7 @@ def run_stochastic_sim(alleles, num_reps,
     print(f'appended {run_label} to file {file_name}')
     return None
 
+#@profile
 def stochastic_sim(Simulation: StochasticSim, label):
     """ function that performs a stochastic simulation: Just the loop through the generations!
      Everything else should be handled prior to that.
@@ -2118,10 +2119,45 @@ def fb_1p_heatmap_diploid_additive3_real():
 
 # endregion fb heatmap
 
+def RS_o01percent_femalesterile_onePartner_MC():
+    """FOR TESTING PURPOSES ONLY"""
+    num_partners = 1
+    alleles = [['C', 'R', 'A'], ['V', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.1]] #[0, 23, 0.00005], [1, 23, 0.00005]] # sex, genotype, frequency
+    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
+    s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "large_pop/small_pop_profile"
+    num_reps_test = 1
+    num_gens_test = 50
+    #"mutation_data/RS_o01percent_onePartner_femSterile"
+
+    K = 200000 #000 # 1 000 000
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=K, mc_prob=maternal_carryover)
+
+    return None
+
+
 def main():
+    RS_o01percent_femalesterile_onePartner_MC()
+    """
     function = sys.argv[1]
     print("executing function " + function)
-    exec(function + "()")
+    exec(function + "()")"""
 
 if __name__ == "__main__":
     main()

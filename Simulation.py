@@ -13,7 +13,7 @@ import time
 import copy
 import pandas as pd
 from tqdm import tqdm
-from PlantClasses import StochasticSim
+from PlantClasses import * #StochasticSim
 
 # import cProfile
 # import pstats

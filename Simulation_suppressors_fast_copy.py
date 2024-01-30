@@ -465,40 +465,8 @@ def mating(Simulation, num_haplos, pollens, ovules, pairs):
 ######### population modification ########
 ##########################################
 
-def RS_o01percent_femalesterile_onePartner_MC():
-    """runs simulations for multiple maternal carryovers and various haploid 
-    fitness costs, for mating 1 female to 1 male"""
-    num_partners = 1
-    alleles = [['C', 'R', 'A'], ['V', 'W']] # a resistance allele is uncleavable
-    intro = [[1, 0, 0.1], [0, 23, 0.00005], [1, 23, 0.00005]] # sex, genotype, frequency
-    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
-    s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
-    f_c = []
-
-    file_name = "large_pop/small_pop_profile_CONFUSED_1000000.2"
-    num_reps_test = 1
-    num_gens_test = 50
-    #"mutation_data/RS_o01percent_onePartner_femSterile"
-
-    K = 1000000 #000 # 1 000 000
-
-    for maternal_carryover in [0]: #, 0.3]:
-        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
-            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
-            hf_c = [[0, ['C', 'W'], 1.0, [['V']]],
-                    [1, ['C', 'W'], 1.0, []],
-                    [0, ['V'], clvr_cost, []], # haploid fitness cost
-                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
-
-            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
-            run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
-                            f_c, hf_c, s_c, num_partners, 
-                            mut_flag= "NA", run_label= run_label,
-                            file_name= file_name, k=K, mc_prob=maternal_carryover)
-
-    return None
-
-def RS_o001percent_femalesterile_onePartner_MC():
+# for testing
+def test_pop():
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
@@ -508,19 +476,53 @@ def RS_o001percent_femalesterile_onePartner_MC():
     s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
     f_c = []
 
-    file_name = "mutation_data/RS_o001percent_onePartner_femSterile"
+    file_name = "large_pop/TEST"
 
-    K = 10000000 # 10 000 000
+    K = 1000000 # 10 000 000
 
-    for maternal_carryover in [0, 0.3]:
-        for clvr_cost in [0, 0.05, 0.1, 0.15]:
+    run = "test"
+    num_reps_test = 1
+    num_gens_test = 10
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
             # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
             hf_c = [[0, ['C', 'W'], 1.0, [['V']]],
                     [1, ['C', 'W'], 1.0, []],
                     [0, ['V'], clvr_cost, []], # haploid fitness cost
                     [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
-            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
+            run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=K, mc_prob=maternal_carryover)
+
+    return None
+
+def RS_o001percent_femalesterile_onePartner_MC(run):
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'R', 'A'], ['V', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.1], [0, 23, 0.000005], [1, 23, 0.000005]] # sex, genotype, frequency
+    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
+    s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data/fast_copy/RS_o001percent_onePartner_femSterile"
+
+    K = 10000000 # 10 000 000
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
             run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, 
                             mut_flag= "NA", run_label= run_label,
@@ -528,7 +530,7 @@ def RS_o001percent_femalesterile_onePartner_MC():
 
     return None
 
-def RS_o0001percent_femalesterile_onePartner_MC():
+def RS_o0001percent_femalesterile_onePartner_MC(run):
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
@@ -538,7 +540,7 @@ def RS_o0001percent_femalesterile_onePartner_MC():
     s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
     f_c = []
 
-    file_name = "mutation_data/RS_o0001percent_onePartner_femSterile"
+    file_name = "mutation_data/fast_copy/RS_o0001percent_onePartner_femSterile"
 
     K = 100000000 # 100 000 000
 
@@ -550,7 +552,7 @@ def RS_o0001percent_femalesterile_onePartner_MC():
                     [0, ['V'], clvr_cost, []], # haploid fitness cost
                     [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
-            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
             run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, 
                             mut_flag= "NA", run_label= run_label,
@@ -559,7 +561,7 @@ def RS_o0001percent_femalesterile_onePartner_MC():
     return None
 
 def main():
-    RS_o01percent_femalesterile_onePartner_MC()
+    test_pop()
     #function = sys.argv[1]
     #print("executing function " + function)
     #exec(function + "()")
