@@ -13,7 +13,7 @@ import time
 import copy
 import pandas as pd
 from tqdm import tqdm
-from PlantClasses import * #StochasticSim
+from PlantClasses import *
 
 # import cProfile
 # import pstats
@@ -627,7 +627,7 @@ def intro20_onePartner_female_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -651,7 +651,7 @@ def intro20_fivePartner_female_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -675,7 +675,7 @@ def intro20_twentyPartner_female_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -704,7 +704,7 @@ def onePartner_male_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -729,7 +729,7 @@ def fivePartner_male_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -754,7 +754,7 @@ def twentyPartner_male_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -780,7 +780,7 @@ def intro20_onePartner_male_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -804,7 +804,7 @@ def intro20_fivePartner_male_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
 
     return None
 
@@ -828,7 +828,7 @@ def intro20_twentyPartner_male_sterility_MC():
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(ALLELES, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, run_label= run_label,
-                            file_name= file_name, k=POP_MAX)
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
      
     return None
 

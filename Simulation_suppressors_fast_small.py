@@ -541,7 +541,77 @@ def loci_jumping(run):
     s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
     f_c = []
 
-    file_name = "mutation_data/fast_copy/RS_o0001percent_onePartner_femSterile_LociJumping5"
+    file_name = "mutation_data/fast_copy/RS_o0001percent_onePartner_femSterile_LociJumping7"
+
+    K = 1000000 # 1, 000, 000
+
+    num_reps_test = 1
+    num_gens_test = 50
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W1', 'W2'], 1.0, [['V'], ['V1']]],
+                    [1, ['C', 'W1', 'W2'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+            for intro_freq in [0.000002, 0.05]:
+                intro = [[1, 3, 0.1-intro_freq], [0, 6, intro_freq/2], [1, 6, intro_freq/2]] # sex, genotype, frequency
+                # 3 should be cc vv ww and 6 should be cc vw wv
+
+                run_label = f'IF_{intro_freq}_FC_{clvr_cost}_{run}'
+                run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
+                                f_c, hf_c, s_c, num_partners, 
+                                mut_flag= "NA", run_label= run_label,
+                                file_name= file_name, k=K, mc_prob=maternal_carryover)
+
+    return None
+
+def fertility_jumping(run):
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'A'], ['V', 'W'], ['F', 'N']] # D is a second cleaver
+    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
+    s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data/fast_copy/RS_o0001percent_onePartner_femSterile_FertilityJumping"
+
+    K = 1000000 # 1, 000, 000
+
+    num_reps_test = 1
+    num_gens_test = 50
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W1', 'W2'], 1.0, [['V'], ['V1']]],
+                    [1, ['C', 'W1', 'W2'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+            for intro_freq in [0.000002, 0.05]:
+                intro = [[1, 3, 0.1], [0, -2, intro_freq/2], [1, -2, intro_freq/2]] # sex, genotype, frequency
+                # 3 should be cc vv ww and -2 should be aa ww fn
+
+                run_label = f'IF_{intro_freq}_FC_{clvr_cost}_{run}'
+                run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
+                                f_c, hf_c, s_c, num_partners, 
+                                mut_flag= "NA", run_label= run_label,
+                                file_name= file_name, k=K, mc_prob=maternal_carryover)
+
+    return None
+
+def loci_jumping_rescue_only(run):
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'A'], ['V', 'W1'], ['R1', 'W2']] # D is a second cleaver
+    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
+    s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data/fast_copy/RS_o0001percent_onePartner_femSterile_LociJumping_rescueOnly"
 
     K = 10000 # 1, 000, 000
 
@@ -551,14 +621,15 @@ def loci_jumping(run):
     for maternal_carryover in [0]: #, 0.3]:
         for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
             # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
-            hf_c = [[0, ['C', 'W1', 'W2'], 1.0, [['V']]],
+            hf_c = [[0, ['C', 'W1', 'W2'], 1.0, [['V'], ['R1']]],
                     [1, ['C', 'W1', 'W2'], 1.0, []],
                     [0, ['V'], clvr_cost, []], # haploid fitness cost
                     [1, ['V'], clvr_cost, []]] # haploid fitness cost
-            for intro_freq in [0.0001, 0.05]:
-                intro = [[1, 0, 0.1], [0, 23, intro_freq], [1, 23, intro_freq]] # sex, genotype, frequency
+            for intro_freq in [0.0002, 0.05]: #[0.000002, 0.05]:
+                intro = [[1, 3, 0.1-intro_freq], [0, 6, intro_freq/2], [1, 6, intro_freq/2]] # sex, genotype, frequency
+                # 3 should be cc vv ww and 6 should be cc vw wv
 
-                run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
+                run_label = f'IF_{intro_freq}_FC_{clvr_cost}_{run}'
                 run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
                                 f_c, hf_c, s_c, num_partners, 
                                 mut_flag= "NA", run_label= run_label,
@@ -568,7 +639,7 @@ def loci_jumping(run):
 
 
 def main():
-    loci_jumping("testtt")
+    #RS_o01percent_femalesterile_onePartner_MC()
     function = str(sys.argv[1]) + "(" + str(sys.argv[2]) + ")"
     print("executing function " + function)
     exec(function)

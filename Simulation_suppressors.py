@@ -1748,7 +1748,194 @@ def lof_clvr_if5_suppression_femalesterile_twentyPartner_MC():
     return None
 
 
-# endregion clvr LOF - new IF's
+# endregion clvr LOF - new IF's... the only thing different is maternal carryover. So.
+
+def lof_clvr_if1_suppression_femalesterile_onePartner_MC_2():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'A'], ['V', 'R', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.099], [1, 13, 0.001]] # sex, genotype, frequency
+    # genotype 0 = cc vv, 13 = [['C', 'A'], ['R', 'R']]
+    s_c = [[0, ['V', 'V'], 1.0],
+           [0, ['V', 'R'], 1.0],
+           [0, ['R', 'V'], 1.0],
+           [0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data2/lof_clvr_if1_suppression_onePartner_femSterile_2"
+
+    for maternal_carryover in [0, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15, 0.2]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V'], ['R']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
+def lof_clvr_if1_suppression_femalesterile_fivePartner_MC_2():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 5
+    alleles = [['C', 'A'], ['V', 'R', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.099], [1, 13, 0.001]] # sex, genotype, frequency
+    # genotype 0 = cc vv, 13 = [['C', 'A'], ['R', 'R']]
+    s_c = [[0, ['V', 'V'], 1.0],
+           [0, ['V', 'R'], 1.0],
+           [0, ['R', 'V'], 1.0],
+           [0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data2/lof_clvr_if1_suppression_fivePartner_femSterile_2"
+
+    for maternal_carryover in [0, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15, 0.2]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V'], ['R']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
+def lof_clvr_if1_suppression_femalesterile_twentyPartner_MC_2():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 20
+    alleles = [['C', 'A'], ['V', 'R', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.099], [1, 13, 0.001]] # sex, genotype, frequency
+    # genotype 0 = cc vv, 13 = [['C', 'A'], ['R', 'R']]
+    s_c = [[0, ['V', 'V'], 1.0],
+           [0, ['V', 'R'], 1.0],
+           [0, ['R', 'V'], 1.0],
+           [0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data2/lof_clvr_if1_suppression_twentyPartner_femSterile_2"
+
+    for maternal_carryover in [0, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15, 0.2]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V'], ['R']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
+def lof_clvr_if1_suppression_femalesterile_onePartner_MC_3():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'A'], ['V', 'R', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.08], [1, 13, 0.02]] # sex, genotype, frequency
+    # genotype 0 = cc vv, 13 = [['C', 'A'], ['R', 'R']]
+    s_c = [[0, ['V', 'V'], 1.0],
+           [0, ['V', 'R'], 1.0],
+           [0, ['R', 'V'], 1.0],
+           [0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data2/lof_clvr_if1_suppression_onePartner_femSterile_3"
+
+    for maternal_carryover in [0, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15, 0.2]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V'], ['R']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, 2*NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
+def lof_clvr_if1_suppression_femalesterile_fivePartner_MC_3():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 5
+    alleles = [['C', 'A'], ['V', 'R', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.08], [1, 13, 0.02]] # sex, genotype, frequency
+    # genotype 0 = cc vv, 13 = [['C', 'A'], ['R', 'R']]
+    s_c = [[0, ['V', 'V'], 1.0],
+           [0, ['V', 'R'], 1.0],
+           [0, ['R', 'V'], 1.0],
+           [0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data2/lof_clvr_if1_suppression_fivePartner_femSterile_3"
+
+    for maternal_carryover in [0, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15, 0.2]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V'], ['R']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, 2*NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
+def lof_clvr_if1_suppression_femalesterile_twentyPartner_MC_3():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 20
+    alleles = [['C', 'A'], ['V', 'R', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.08], [1, 13, 0.02]] # sex, genotype, frequency
+    # genotype 0 = cc vv, 13 = [['C', 'A'], ['R', 'R']]
+    s_c = [[0, ['V', 'V'], 1.0],
+           [0, ['V', 'R'], 1.0],
+           [0, ['R', 'V'], 1.0],
+           [0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data2/lof_clvr_if1_suppression_twentyPartner_femSterile_3"
+
+    for maternal_carryover in [0, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15, 0.2]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V'], ['R']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, 2*NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
 
 # region recombination distance
 
@@ -1889,6 +2076,111 @@ def rd1_clvr_suppression_fs_twentyPartner():
 
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
             run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            r_d= recomb_d,
+                            mut_flag= "recomb_dist_1", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
+def rd1_clvr_suppression_fs_onePartner_2():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'A'], ['V', 'W'], ['R', 'X']] # cleavable allele, clvr, grna/cargo 
+    intro = [[1, 0, 0.1]] # release of homozygous males at 10% population frequency
+    s_c = [[0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    
+    recomb_d = [[50, 1], [50, 1]]
+
+    ## note: here, an individual that has a V on one chromosome and an R on the second is NOT sterile
+
+    f_c = []
+
+    file_name = "mutation_data/rd_1_suppression_onePartner_femSterile_worseFertile2"
+
+    for maternal_carryover in [0, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W', 'X'], 1.0, [['R']]],
+                    [1, ['C', 'W', 'X'], 1.0, []],
+                    [0, ['C', 'V', 'X'], 1.0, [['R']]],
+                    [1, ['C', 'V', 'X'], 1.0, []], # maternal resuce happens via 'R'
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, 2*NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            r_d= recomb_d,
+                            mut_flag= "recomb_dist_1", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
+def rd1_clvr_suppression_fs_fivePartner_2():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 5
+    alleles = [['C', 'A'], ['V', 'W'], ['R', 'X']] # cleavable allele, clvr, grna/cargo 
+    intro = [[1, 0, 0.1]] # release of homozygous males at 10% population frequency
+    s_c = [[0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    
+    recomb_d = [[50, 1], [50, 1]]
+
+    ## note: here, an individual that has a V on one chromosome and an R on the second is NOT sterile
+
+    f_c = []
+
+    file_name = "mutation_data/rd_1_suppression_fivePartner_femSterile_worseFertile2"
+
+    for maternal_carryover in [0, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W', 'X'], 1.0, [['R']]],
+                    [1, ['C', 'W', 'X'], 1.0, []],
+                    [0, ['C', 'V', 'X'], 1.0, [['R']]],
+                    [1, ['C', 'V', 'X'], 1.0, []], # maternal resuce happens via 'R'
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, 2*NUM_REPS, NUM_GENS, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            r_d= recomb_d,
+                            mut_flag= "recomb_dist_1", run_label= run_label,
+                            file_name= file_name, k=POP_MAX, mc_prob=maternal_carryover)
+
+    return None
+
+def rd1_clvr_suppression_fs_twentyPartner_2():
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 20
+    alleles = [['C', 'A'], ['V', 'W'], ['R', 'X']] # cleavable allele, clvr, grna/cargo 
+    intro = [[1, 0, 0.1]] # release of homozygous males at 10% population frequency
+    s_c = [[0, ['R', 'R'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    
+    recomb_d = [[50, 1], [50, 1]]
+
+    ## note: here, an individual that has a V on one chromosome and an R on the second is NOT sterile
+
+    f_c = []
+
+    file_name = "mutation_data/rd_1_suppression_twentyPartner_femSterile_worseFertile2"
+
+    for maternal_carryover in [0, 0.3]:
+        for clvr_cost in [0, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W', 'X'], 1.0, [['R']]],
+                    [1, ['C', 'W', 'X'], 1.0, []],
+                    [0, ['C', 'V', 'X'], 1.0, [['R']]],
+                    [1, ['C', 'V', 'X'], 1.0, []], # maternal resuce happens via 'R'
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_stochastic_sim(alleles, 2*NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, 
                             r_d= recomb_d,
                             mut_flag= "recomb_dist_1", run_label= run_label,
