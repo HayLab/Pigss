@@ -115,7 +115,7 @@ def run_stochastic_sim(alleles, num_reps,
     print(f'appended {run_label} to file {file_name}')
     return None
 
-@profile
+#@profile
 def stochastic_sim(Simulation: StochasticSim, label):
     """ function that performs a stochastic simulation: Just the loop through the generations!
      Everything else should be handled prior to that.
@@ -183,7 +183,7 @@ def stochastic_sim(Simulation: StochasticSim, label):
             list_mother_counts.append(mother_counts)
 
             # if father_counts around 1,000,000 or larger, we split until size ~500,000
-            num_splits = np.round(np.log2((sum(father_counts) / 50000))) # some function
+            num_splits = np.round(np.log2((sum(father_counts) / 100000))) # some function
             if num_splits > 0:
                 for i in range(int(num_splits)):
                     temp_father_list = []
@@ -341,7 +341,7 @@ def pdf_to_cdf(array):
         out.append(out[-1] + value)
     return out
 
-@profile
+#@profile
 def fathers_cross_mothers(Simulation, father_counts, mother_counts, num_haplos):
     """given father counts and mother counts return a pair array"""
     fathers_long = [y for index, count in enumerate(father_counts) for y in [index] * int(count)]
@@ -480,8 +480,11 @@ def RS_o0001percent_femalesterile_onePartner_MC(run):
 
     K = 100000000 # 100 000 000
 
-    for maternal_carryover in [0, 0.3]:
-        for clvr_cost in [0, 0.05, 0.1, 0.15]:
+    num_reps_test = 1
+    num_gens_test = 30
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
             # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
             hf_c = [[0, ['C', 'W'], 1.0, [['V']]],
                     [1, ['C', 'W'], 1.0, []],
@@ -489,18 +492,86 @@ def RS_o0001percent_femalesterile_onePartner_MC(run):
                     [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
-            run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
+            run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
                             f_c, hf_c, s_c, num_partners, 
                             mut_flag= "NA", run_label= run_label,
                             file_name= file_name, k=K, mc_prob=maternal_carryover)
 
     return None
 
+def RS_o0001percent_femalesterile_onePartner_MC_LONG(run):
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'R', 'A'], ['V', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.1], [0, 23, 0.0000005], [1, 23, 0.0000005]] # sex, genotype, frequency
+    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
+    s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data/fast_copy/RS_o0001percent_onePartner_femSterile_LONG"
+
+    K = 100000000 # 100 000 000
+
+    num_reps_test = 1
+    num_gens_test = 100
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
+            run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=K, mc_prob=maternal_carryover)
+
+    return None
+
+def loci_jumping(run):
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'A'], ['V', 'W1'], ['V1', 'W2']] # D is a second cleaver
+    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
+    s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data/fast_copy/RS_o0001percent_onePartner_femSterile_LociJumping5"
+
+    K = 10000 # 1, 000, 000
+
+    num_reps_test = 1
+    num_gens_test = 50
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W1', 'W2'], 1.0, [['V']]],
+                    [1, ['C', 'W1', 'W2'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+            for intro_freq in [0.0001, 0.05]:
+                intro = [[1, 0, 0.1], [0, 23, intro_freq], [1, 23, intro_freq]] # sex, genotype, frequency
+
+                run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
+                run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
+                                f_c, hf_c, s_c, num_partners, 
+                                mut_flag= "NA", run_label= run_label,
+                                file_name= file_name, k=K, mc_prob=maternal_carryover)
+
+    return None
+
+
 def main():
-    test_pop()
-    #function = sys.argv[1]
-    #print("executing function " + function)
-    #exec(function + "()")
+    loci_jumping("testtt")
+    function = str(sys.argv[1]) + "(" + str(sys.argv[2]) + ")"
+    print("executing function " + function)
+    exec(function)
 
 if __name__ == "__main__":
     main()

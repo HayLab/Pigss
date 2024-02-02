@@ -289,7 +289,7 @@ class StochasticSim:
             # generate haplotypes
             # add modification if necessary
             copy_genes = copy.deepcopy(genes)
-            if ('V' in alleles) & ('C' not in alleles):
+            if (('V' in alleles) | ('V1' in alleles)) & ('C' not in alleles):
                 copy_genes[0].append('C')
             # get all possible haplotypes
             haplotypes = list(product(*copy_genes))
@@ -486,9 +486,9 @@ class StochasticSim:
         # loop through possible gametes & unpack
         for index, [alleles, prob] in enumerate(possible_gametes_list):
             # perform cleavage in mother
-            if ('V' in diploid.alleles) & ('A' in alleles):
+            if (('V' in diploid.alleles) | ('V1' in diploid.alleles)) & ('A' in alleles):
                 # get modified offspring
-                new_alleles = ['C', alleles[1]]
+                new_alleles = ['C'] + alleles[1:]
                 possible_gametes_list.append([new_alleles, prob * self.cleave_efficiency])
                 # edit original offspring
                 possible_gametes_list[index] = [alleles, prob * (1-self.cleave_efficiency)]

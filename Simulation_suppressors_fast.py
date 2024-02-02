@@ -183,10 +183,9 @@ def stochastic_sim(Simulation: StochasticSim, label):
 
             pairs = np.zeros((num_haplos, num_haplos))
 
+            pollens_grouped_by_mate = []
+
             for ovules in grouped_ovules:
-                # remove empty fathers
-                #while [] in grouped_pollens:
-                #    grouped_pollens.remove([])
 
                 # when females are the introduced population, may lead to 
                 #   more females than males, leading to not enough matings
@@ -225,11 +224,6 @@ def stochastic_sim(Simulation: StochasticSim, label):
 
 
                     ###### apply fitness costs ##############
-                    """# get random integers
-                    rand_floats = rng.random(len(pollens))
-                    # apply fitness costs to each pollen
-                    surviving_pollens = [pollen for index, pollen in enumerate(pollens)
-                                         if rand_floats[index] < Simulation.haplo_fitness[(pollen, 1)]]"""
 
                     surviving_pollens = np.zeros(num_haplos) # a list of len [number of types of pollens],
                                           # where each value is how many of that pollen exist in the population
@@ -239,29 +233,14 @@ def stochastic_sim(Simulation: StochasticSim, label):
                         amount = pollens[index]
                         pollen = index_haploid_dict[index]
                         mu = Simulation.haplo_fitness[(pollen, 1)]
-                        #sigma = (-19.99*(mu-0.5)**2+5)/100
-                        #distribution = stats.truncnorm((lower - mu) / sigma,
-                        #                            (upper - mu) / sigma,
-                        #                            loc = mu, scale = sigma)
-                        
-                        # we use a normal distribution to approximate how many will survive
-                        # and must truncate it between 1 and 0
-                        #survival = min(rng.normal(mu, sigma), 1.0)
-                        #survival = max(survival, 0)
-                        
-                        # multiply randomized fitness value by number of pollens
-                        #surviving_pollens.append(round(distribution.rvs(1)[0] * amount))
                         surviving_pollens[index] = round(mu * amount)
 
-
-                    # apply fitness costs to each ovule
-                    #rand_floats = rng.random(len(ovules))
+                    # condense ovules
                     ovules_short = np.zeros(num_haplos)
                     for ovule in ovules:
                         ovules_short[ovule] += 1
+
                     # apply fitness costs to each ovule
-                    #surviving_ovules = [ovule for index, ovule in enumerate(ovules)
-                    #                    if rand_floats[index] < Simulation.haplo_fitness[(ovule, 0)]]
                     
                     surviving_ovules = np.zeros(num_haplos) # a list of len [number of types of pollens],
                                           # where each value is how many of that pollen exist in the population
@@ -300,33 +279,12 @@ def stochastic_sim(Simulation: StochasticSim, label):
                     sperm_long = [y for index, count in enumerate(sperm) for y in [index] * int(count)]
                     ovules_long = [y for index, count in enumerate(surviving_ovules) for y in [index] * int(count)]
                     rng.shuffle(ovules_long)
-                        
-
-
                     for index, single_sperm in enumerate(sperm_long):
                         # number of sperm should be equal to or less than number of ovules, so
                         # as long as ovules/eggs are shuffled, it shouldn't matter if the
                         # sperm list is shuffled or not !
                         egg_index = ovules_long[index]
                         pairs[egg_index][single_sperm] += 1
-                        
-                    # sperm_options = sperm.nonzero()[0]
-                    # egg_options = surviving_ovules.nonzero()[0]
-
-                    # for i in range(int(sum(sperm))):
-                    #     rng.shuffle(egg_options)
-                    #     egg_index = egg_options[0]
-                    #     sperm_index = sperm_options[0]
-
-                    #     surviving_ovules[egg_index] += -1
-                    #     if surviving_ovules[egg_index] == 0:
-                    #         egg_options = egg_options[1:]
-
-                    #     sperm[sperm_index] += -1
-                    #     if sperm[sperm_index] == 0:
-                    #         sperm_options = sperm_options[1:]
-
-                    #     pairs[egg_index][sperm_index] += 1
 
             mothers, fathers = pairs.nonzero()
             for i in range(len(mothers)):
@@ -450,21 +408,21 @@ def stochastic_sim(Simulation: StochasticSim, label):
 ######### population modification ########
 ##########################################
 
-def RS_o01percent_femalesterile_onePartner_MC():
+def RS_o01percent_femalesterile_onePartner_MC(run):
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
     alleles = [['C', 'R', 'A'], ['V', 'W']] # a resistance allele is uncleavable
-    intro = [[1, 0, 0.1]] #, [0, 23, 0.00005], [1, 23, 0.00005]] # sex, genotype, frequency
+    intro = [[1, 0, 0.1], [0, 23, 0.00005], [1, 23, 0.00005]] # sex, genotype, frequency
     # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
     s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
     f_c = []
 
-    file_name = "large_pop/small_pop_profile_CONFUSED_correct" #"mutation_data/RS_o01percent_onePartner_femSterile"
-    num_reps_test = 20
-    num_gens_test = 50
+    file_name = "mutation_data/RS_o01percent_onePartner_femSterile2"
+    num_reps_test = 1
+    num_gens_test = 30
 
-    K = 10000 # 100 / 1000000 = 10^-4
+    K = 1000000 # 100 / 1000000 = 10^-4
 
     for maternal_carryover in [0]: #, 0.3]:
         for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
@@ -474,13 +432,46 @@ def RS_o01percent_femalesterile_onePartner_MC():
                     [0, ['V'], clvr_cost, []], # haploid fitness cost
                     [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
-            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
             run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
                             f_c, hf_c, s_c, num_partners, 
                             mut_flag= "NA", run_label= run_label,
                             file_name= file_name, k=K, mc_prob=maternal_carryover)
 
     return None
+
+def RS_o001percent_1000000_femalesterile_onePartner_MC(run):
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'R', 'A'], ['V', 'W']] # a resistance allele is uncleavable
+    intro = [[1, 0, 0.1], [0, 23, 0.000005], [1, 23, 0.000005]] # sex, genotype, frequency
+    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
+    s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "mutation_data/RS_o001percent_1000000_onePartner_femSterile"
+    num_reps_test = 1
+    num_gens_test = 30
+
+    K = 1000000 # 100 / 1000000 = 10^-4
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
+            run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
+                            f_c, hf_c, s_c, num_partners, 
+                            mut_flag= "NA", run_label= run_label,
+                            file_name= file_name, k=K, mc_prob=maternal_carryover)
+
+    return None
+
 
 def RS_o001percent_femalesterile_onePartner_MC(run):
     """runs simulations for multiple maternal carryovers and various haploid 
@@ -492,19 +483,21 @@ def RS_o001percent_femalesterile_onePartner_MC(run):
     s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
     f_c = []
 
-    file_name = "mutation_data/RS_o001percent_onePartner_femSterile"
+    file_name = "mutation_data/TEST_RS_o001percent_onePartner_femSterile"
+    num_reps_test = 1
+    num_gens_test = 30
 
     K = 10000000 # 10 000 000
 
-    for maternal_carryover in [0, 0.3]:
-        for clvr_cost in [0, 0.05, 0.1, 0.15]:
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
             # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
             hf_c = [[0, ['C', 'W'], 1.0, [['V']]],
                     [1, ['C', 'W'], 1.0, []],
                     [0, ['V'], clvr_cost, []], # haploid fitness cost
                     [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
-            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
+            run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
             run_stochastic_sim(alleles, NUM_REPS, NUM_GENS, intro,
                             f_c, hf_c, s_c, num_partners, 
                             mut_flag= "NA", run_label= run_label,
@@ -543,10 +536,10 @@ def RS_o0001percent_femalesterile_onePartner_MC():
     return None
 
 def main():
-    RS_o01percent_femalesterile_onePartner_MC()
-    #function = sys.argv[1]
-    #print("executing function " + function)
-    #exec(function + "()")
+    #RS_o01percent_femalesterile_onePartner_MC()
+    function = str(sys.argv[1]) + "(" + str(sys.argv[2]) + ")"
+    print("executing function " + function)
+    exec(function)
 
 if __name__ == "__main__":
     main()
