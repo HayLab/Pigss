@@ -394,7 +394,7 @@ def fathers_cross_mothers(Simulation, father_counts, mother_counts, num_haplos):
 ######### population modification ########
 ##########################################
 
-def RS_o001percent_femalesterile_onePartner_MC(run):
+def RS_o001percent_femalesterile_onePartner(run):
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
@@ -424,7 +424,7 @@ def RS_o001percent_femalesterile_onePartner_MC(run):
 
     return None
 
-def RS_o0001percent_int10_femalesterile_onePartner_MC(run):
+def RS_o0001percent_int10_femalesterile_onePartner(run):
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
@@ -439,6 +439,7 @@ def RS_o0001percent_int10_femalesterile_onePartner_MC(run):
     K = 100000000 # 100 000 000
 
     num_reps_test = 1
+    num_gens_test = 30
 
     for maternal_carryover in [0]: #, 0.3]:
         for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
@@ -449,14 +450,15 @@ def RS_o0001percent_int10_femalesterile_onePartner_MC(run):
                     [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
-            run_stochastic_sim(alleles, num_reps_test, NUM_GENS, intro,
+            run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
                             f_c, hf_c, s_c, num_partners, 
                             mut_flag= "NA", run_label= run_label,
                             file_name= file_name, k=K, mc_prob=maternal_carryover)
 
     return None
 
-def RS_o0001percent_int10_femalesterile_onePartner_MC_LONG(run):
+
+def RS_o0001percent_int10_femalesterile_onePartner_LONG(run):
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
@@ -489,7 +491,7 @@ def RS_o0001percent_int10_femalesterile_onePartner_MC_LONG(run):
 
     return None
 
-def RS_o0001percent_int20_femalesterile_onePartner_MC(run):
+def RS_o0001percent_int20_femalesterile_onePartner(run):
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
@@ -504,6 +506,7 @@ def RS_o0001percent_int20_femalesterile_onePartner_MC(run):
     K = 100000000 # 100 000 000
 
     num_reps_test = 1
+    num_gens_test = 30
 
     for maternal_carryover in [0]: #, 0.3]:
         for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
@@ -514,14 +517,14 @@ def RS_o0001percent_int20_femalesterile_onePartner_MC(run):
                     [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}_{run}'
-            run_stochastic_sim(alleles, num_reps_test, NUM_GENS, intro,
+            run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
                             f_c, hf_c, s_c, num_partners, 
                             mut_flag= "NA", run_label= run_label,
                             file_name= file_name, k=K, mc_prob=maternal_carryover)
 
     return None
 
-def RS_o0001percent_int20_femalesterile_onePartner_MC_LONG(run):
+def RS_o0001percent_int20_femalesterile_onePartner_LONG(run):
     """runs simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
@@ -553,8 +556,6 @@ def RS_o0001percent_int20_femalesterile_onePartner_MC_LONG(run):
                             file_name= file_name, k=K, mc_prob=maternal_carryover)
 
     return None
-
-
 
 def main():
     #RS_o01percent_femalesterile_onePartner_MC()
