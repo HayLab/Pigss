@@ -53,7 +53,23 @@ resistant_modification_int20_onePartner_haploid_fc, resistant_modification_int20
 resistant_modification_int2_onePartner_haploid_fc, resistant_modification_int2_fivePartner_haploid_fc, resistant_modification_int2_twentyPartner_haploid_fc | the same as resistant_modification_int10_onePartner_haploid_fc, but for a 2% introduction on non-ClvR heterozygous resistant individuals (1% females and 1% males) | resistant_modification_heterozygotes_int2_onePartner, resistant_modification_heterozygotes_int2_fivePartner, resistant_modification_heterozygotes_int2_twentyPartner | Supplemental Fig. TODO
 resistant_suppression_int_o1_femalesterile_onePartner   | a release of 10% ClvR males, and 0.1% individuals resistant to cleavage (half males, half females). | resistant_suppression_heterozygotes_int_o1_onePartner | NA
 
+The faster simulation file, called "Simulation_fast_small.py" features its own select few functions, used for simulating very large populations. Unlike functions in Simulation.py, which automatically attach run labels based on the number of repetitions, these functions each take in a run label as well. For example, to run 3 runs:
 
+    python Simulation_fast_small.py function_name 1
+    python Simulation_fast_small.py function_name 2
+    python Simulation_fast_small.py function_name 3
+
+Or, when using a server or method of bat
+
+A list of the large-population functions are as follows:
+
+Name | Behavior | File name (if applicable) | Figure data was used for (if applicable)
+--- | --- | --- | ---
+RS_o0001percent_int10_femalesterile_onePartner | A release of 10% ClvR into a population of 100,000,000, along with a release of 0.0001% individuals heterozygous for a resistant mutation, which is uncleavable by ClvR. Only runs for 30 generations | resistant_suppression_into0001percent_int10_fs_onePartner | Fig. 8 c
+RS_o0001percent_int20_femalesterile_onePartner | As above, but for a release of 20% ClvR | resistant_suppression_into0001percent_int20_fs_onePartner | NA
+RS_o0001percent_int10_femalesterile_onePartner_LONG, RS_o0001percent_int20_femalesterile_onePartner_LONG | The same as the above two functions, but instead of running for 30 generations, runs for 100 | resistant_suppression_into0001percent_int10_fs_onePartner_LONG, resistant_suppression_into0001percent_int20_fs_onePartner_LONG | NA
+clvr_loci_jumping |
+fertility_jumping |
 
 For efficiency, each allele is assigned a single letter. Here is an explanation of which allele represents what. Those with asterisks are not always used. Loci go from left to right, and in the case of suppression the "higher-numbered" loci, or the loci "farthest right" is always the fertility site:
 
@@ -69,18 +85,6 @@ Allele | Locus | Meaning
 "X"* | 3 | The non-rescue, wildtype allele
 
 ![diagram showing the mapping of allele letters to what alleles they represent, which locus they live at, and their behavior](./allele_mapping.png)
-
-Many functions are already written, and will automatically output the data to a folder named "final_data." Here is a list of function names, the data they generate, and the names of the files they will create. All file names here are listed as "onePartner," however for other number of partners, the file name matches such that a function called "fivePartner_..." will have file name "fivePartner..."
-
-Function Names | Data Simulated | Output file names 
---- | --- | --- 
-explore_fitness_costs_diploid | 301 | 283  <!-- end of line -->
-onePartner_explore_fitness_costs_haploid, fivePartner_explore_fitness_costs_haploid, twentyPartner_explore_fitness_costs_haploid| explores haploid fitness costs, for an introduction of 10% homozygous males, for given number of partners | onePartner_haploidFitCosts_noSterile_adults.csv, onePartner_haploidFitCosts_noSterile_NEWallele.csv, onePartner_haploidFitCosts_noSterile_total.csv <!-- end of line -->
-intro20_onePartner_explore_fitness_costs_haploid, intro20_fivePartner_explore_fitness_costs_haploid, intro20_twentyPartner_explore_fitness_costs_haploid| the same as twentyPartner_explore_fitness_costs_haploid, but with an introduction frequency of 20% instead of 10% | int20_onePartner_haploidFitCosts_noSterile_adults.csv, int20_onePartner_haploidFitCosts_noSterile_NEWallele.csv, int20_onePartner_haploidFitCosts_noSterile_total.csv. <!-- end of line -->
-onePartner_female_sterility_MC, fivePartner_female_sterility_MC, twentyPartner_female_sterility_MC | explores population suppression, in the case where females homozygous for the cleaved target gene are sterile, for fitness costs 0, 0.05, 0.1, 0.15, & 0.2, and for maternal carryover of rescue likelihoods of 0, 0.1, 0.2, and 0.3. Homozygous males are introduced at frequency of 10% of the carrying capacity. | onePartner_female_sterility_adults.csv, onePartner_female_sterility_NEWallele.csv, onePartner_female_sterility_total.csv,   <!-- end of line -->
-intro20_onePartner_female_sterility_MC, intro20_fivePartner_female_sterility_MC, intro20_onePartner_female_sterility_MC | the same as twentyPartner_female_sterility_MC, but with an introduction frequency of 20% instead of 10%. | int20_onePartner_female_sterility_adults.csv, int20_onePartner_female_sterility_NEWallele.csv, int20_onePartner_female_sterility_total.csv  <!-- end of line -->
-onePartner_male_sterility_MC, fivePartner_male_sterility_MC, twentyPartner_male_sterility_MC | explores population suppression, in the case where males homozygous for the cleaved target gene are sterile, for multiple fitness costs and for multiple likelihoods of maternal carryover. Homozygous females are introduced at a frequency of 10% of the carrying capacity. | onePartner_male_sterility_adults.csv, onePartner_male_sterility_NEWallele.csv, onePartner_male_sterility_total.csv  <!-- end of line -->
-intro20_onePartner_male_sterility_MC, intro20_fivePartner_male_sterility_MC, intro20_onePartner_male_sterility_MC | the same as twentyPartner_male_sterility_MC, but with an introduction frequency of 20% as opposed to 10%. | int20_onePartner_male_sterility_adults.csv, int20_onePartner_male_sterility_NEWallele.csv, int20_onePartner_male_sterility_total.csv  <!-- end of line -->
 
 ## How it works
 
