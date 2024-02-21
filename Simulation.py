@@ -165,8 +165,9 @@ def stochastic_sim(Simulation: StochasticSim, label):
             # get ovules and pollens, grouped by parent
             grouped_ovules, grouped_pollens = Simulation.get_gametes(mother_counts, father_counts)
             random.shuffle(grouped_ovules)
-            # TODO: grouped ovules take the form 
+            # grouped ovules is a list of lists, where each sublist is a list of ovules
             random.shuffle(grouped_pollens)
+            # we shuffle both ovules and pollens
 
             # store a random integer, for later random choosing of fathers.
             # this is done OUTSIDE of the loop, as rng.choice inside the loop is time-intensive

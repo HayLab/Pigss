@@ -80,7 +80,6 @@ class Diploid:
         genotype    -- list of loci lists of alleles, example: [['C', 'C'], ['V', 'W']]
         alleles     -- flattened version of genotype, example: ['C', 'C', 'V', 'W']
     """
-    # TODO: docstring for each function
     def __init__(self, genotype, alleles) -> None:
         """initialize instance of a diploid"""
         self._genotype: list = copy.deepcopy(genotype)
@@ -582,11 +581,6 @@ class StochasticSim:
             mother  -- a single diploid individual, acting as a mother
             mother_count    -- how many of those mothers exist in the population"""
         # if mother has not been seen before, we must solve for gamete chances
-
-        # TODO: remove this variable after proven to work
-        if self.test1 == 1:
-            print("CALLED RD CORRECTLY")
-            self.test1 = 0
         if (mother, 0) not in self.gametogenesis_dict.keys():
             # generate list of possible gametes
             possible_gametes = list(product(*mother.genotype))

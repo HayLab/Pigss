@@ -395,7 +395,7 @@ def fathers_cross_mothers(Simulation, father_counts, mother_counts, num_haplos):
 ##########################################
 
 def RS_o001percent_femalesterile_onePartner(run):
-    """runs simulations for multiple maternal carryovers and various haploid 
+    """runs a simulation for 0.001% simulations for multiple maternal carryovers and various haploid 
     fitness costs, for mating 1 female to 1 male"""
     num_partners = 1
     alleles = [['C', 'R', 'A'], ['V', 'W']] # a resistance allele is uncleavable

@@ -1,27 +1,38 @@
 ---
-title: "data_visualization"
+title: "figure creation"
 author: "Michelle Johnson"
-date: "2023-10-11"
-output: html_document
+date: "2024-02-09"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+Document for generating figures used in arabidopsis plant ClvR paper.
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, fig.height = 2.5)
 library(tidyverse)
 library(readr)
+library(ggpubr)
+library(scales)
+
+options(dplyr.summarise.inform = FALSE)
+options(tidyverse.quiet = TRUE)
 ```
 
-## setup functions and definitions
+## Background Functions
 
 Basic/Helper Functions
-```{r}
+
+```{r, eval=TRUE}
 cbFun <- c("#ff107f", "#66b9e8", "#117733", "#c77cff", "#f2b822", "#FFEA7C")
+
+null_plot <- ggplot() + theme_void()
 
 windowsFonts("Arial" = windowsFont("Arial"))
 
 getAdultData <- function(fileName){
   full_name = paste(fileName, "_adults.csv", sep = "")
-  print(full_name)
   read.csv(full_name) %>%
     select(-X) %>%
     filter(Generation != "Generation") %>%
@@ -29,8 +40,7 @@ getAdultData <- function(fileName){
 }
 
 getAlleleData <- function(fileName){
-  full_name = paste(fileName, "_NEWallele.csv", sep = "")
-  print(full_name)
+  full_name = paste(fileName, "_allele.csv", sep = "")
   read.csv(full_name) %>%
     select(-X) %>%
     filter(Generation != "Generation") %>%
@@ -39,7 +49,6 @@ getAlleleData <- function(fileName){
 
 getTotalData <- function(fileName){
   full_name = paste(fileName, "_total.csv", sep = "")
-  print(full_name)
   read.csv(full_name) %>%
     select(-X) %>%
     filter(Generation != "Generation") %>%
@@ -48,7 +57,7 @@ getTotalData <- function(fileName){
 
 clean_replacement <- function(dataset, number_partners) {
   dataset %>%
-    separate(Run, c(NA, NA, "fitCost", NA, "introF", "Run"), sep = "_", remove = T) %>%
+    separate(Run, c(NA, NA, "mcProb", NA, "fitCost", "Run"), sep = "_", remove = T) %>%
     mutate(numPartners = number_partners)
 } 
 
@@ -59,7 +68,8 @@ clean_sterility <- function(dataset, number_partners) {
 } 
 ```
 
-More complex functions
+Allele Functions
+
 ```{r}
 get_replacement_data <- function(oneP_fn, fiveP_fn, twentyP_fn){
   # get total data for each type
@@ -68,7 +78,7 @@ get_replacement_data <- function(oneP_fn, fiveP_fn, twentyP_fn){
   total_replacement_twenty <- getTotalData(twentyP_fn) %>% clean_replacement(., number_partners = 20)
   # combine total data and make sexless
   total_replacement <- rbind(total_replacement_one, total_replacement_five, total_replacement_twenty) %>%
-    group_by(Generation, fitCost, introF, Run, numPartners) %>%
+    group_by(Generation, fitCost, mcProb, Run, numPartners) %>%
     summarise(Count = sum(Count))
   
   #get allele data for each type
@@ -77,45 +87,72 @@ get_replacement_data <- function(oneP_fn, fiveP_fn, twentyP_fn){
   allele_replacement_twenty <- getAlleleData(twentyP_fn) %>% clean_replacement(number_partners = 20)
   # combine allele data and make sexless
   allele_replacement <- rbind(allele_replacement_one, allele_replacement_five, allele_replacement_twenty) %>% 
-    group_by(Generation, fitCost, introF, Allele, Run, numPartners) %>%
+    group_by(Generation, fitCost, mcProb, Allele, Run, numPartners) %>%
     summarise(Allele_Count = sum(Count))
   
   merge(total_replacement, allele_replacement)
 }
 
-plot_replacement_data <- function(dataset){
+plot_replacement_panels <- function(dataset, plot_allele, y_label, top_label = FALSE, legend = TRUE) {
   plot <- dataset %>%
-    filter(Allele == "V") %>%
-    #filter(introF == 0.1) %>%
-    filter(fitCost != 0.4, fitCost != 0.2) %>%
+    filter(Allele == plot_allele) %>%
     mutate(percentage = Allele_Count / (2*Count)) %>%
-    group_by(Generation, fitCost, introF, numPartners, Allele) %>%
+    group_by(Generation, fitCost, mcProb, numPartners) %>%
     summarise(avg_percentage = mean(percentage)) %>%
-    filter(avg_percentage != 0) %>%
-    ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
-               fill = fitCost)) +
-    geom_line(size = 0.8) +
-    scale_linetype_binned() +
-    facet_wrap(~numPartners, ncol = 3, 
+    ggplot(aes(x = Generation, y = avg_percentage, color = fitCost, linetype = mcProb)) +
+    geom_line(linewidth = 0.8) +
+    facet_wrap(~numPartners,
                labeller = as_labeller(c(`1` = "One Partner",
                                         `5` = "Five Partners",
                                         `20` = "Twenty Partners"))) +
-    theme_light() +
-    ylab("Percent ClvR") +
-    labs(color = "Fitness Cost") +
+    labs(y = y_label,
+         color = "Fitness Cost",
+         linetype = "Maternal \nCarryover") +
     scale_colour_manual(values = cbFun) +
-    scale_fill_manual(values = cbFun)
-    
-  fullPlot <- plot +
-    theme(
-      strip.background = element_rect(
-      color=NULL, fill=NULL, size=0, linetype="blank"),
-      #strip.text.x = element_text(angle = 0, hjust = 0),
-      text = element_text(size = 10, family = "Arial"))
+    theme_light() +
+    theme(strip.text.x = element_text(size=12, color = "black", hjust = 0, face = "bold"),
+          strip.background = element_rect(fill="white", size=1, color="white"))
   
-  fullPlot
+  if(top_label == FALSE)plot <- plot + theme(strip.text.x = element_blank())
+  
+  if(legend == FALSE)plot <- plot + theme(legend.position = "none")
+  
+  plot
 }
 
+
+plot_replacement_panels_noMC <- function(dataset, plot_allele, y_label, labels = c("", "", ""), top_label = FALSE, legend = TRUE) {
+  if(top_label)labels <- paste(c("One Partner\n", "Five Partners\n", "Twenty Partners\n"), labels)
+  if(!("mcProb" %in% colnames(dataset))) dataset <- mutate(dataset, mcProb = 0)
+  
+  plot <- dataset %>%
+    filter(Allele == plot_allele, mcProb == 0) %>%
+    mutate(percentage = Allele_Count / (2*Count)) %>%
+    group_by(Generation, fitCost, numPartners) %>%
+    summarise(avg_percentage = mean(percentage)) %>%
+    ggplot(aes(x = Generation, y = avg_percentage, color = fitCost)) +
+    geom_line(linewidth = 0.8) +
+    facet_wrap(~numPartners,
+               labeller = as_labeller(c(`1` = labels[1], #"One Partner",
+                                        `5` = labels[2], #"Five Partners",
+                                        `20` = labels[3]))) + #"Twenty Partners"))) +
+    labs(y = y_label,
+         color = "Fitness Cost") +
+    scale_colour_manual(values = cbFun) +
+    theme_light() +
+    theme(strip.text.x = element_text(size=12, color = "black", hjust = 0, face = "bold"),
+          strip.background = element_blank(), #element_rect(fill="white", size=0, color="white", alpha = 0),
+          panel.spacing = unit(8, "pt"))
+  
+  if(legend == FALSE)plot <- plot + theme(legend.position = "none")
+  
+  plot
+}
+```
+
+Total Population Functions
+
+```{r}
 get_suppression_data <- function(oneP_fn, fiveP_fn, twentyP_fn){
   # collect all the data
   total_fsterile_one <- getTotalData(oneP_fn) %>%
@@ -133,1043 +170,695 @@ get_suppression_data <- function(oneP_fn, fiveP_fn, twentyP_fn){
     summarise(Count = sum(Count))
 }
 
-plot_suppression_data <- function(dataset){
+plot_suppression_data <- function(dataset, labels = c("", "", ""), top_label = FALSE){
+  if(top_label)labels <- paste(c("One Partner\n", "Five Partners\n", "Twenty Partners\n"), labels)
+  
   female_plot <- dataset %>%
     filter(fitCost != 0.2) %>%
-    filter(mcProb %in% c(0, 0.3)) %>%
+    #filter(mcProb %in% c(0, 0.3, 1.0)) %>%
     group_by(Generation, mcProb, fitCost, numPartners) %>%
     summarise(avg_Count = mean(Count)) %>% # remove Runs
-    ggplot(aes(x = Generation, y = avg_Count, group = interaction(fitCost, mcProb), color = fitCost, linetype = mcProb)) +
-    geom_line(size = 0.8) +
+    ggplot(aes(x = Generation, y = avg_Count, group = paste(fitCost, mcProb), color = fitCost, linetype = mcProb)) +
+    geom_line(linewidth =0.8) +
     facet_wrap(~numPartners, ncol = 3,
-               labeller = as_labeller(c(`1` = "One Partner",
-                                        `5` = "Five Partners",
-                                        `20` = "Twenty Partners"))) +
+               labeller = as_labeller(c(`1` = labels[1],
+                                        `5` = labels[2],
+                                        `20` = labels[3]))) +
     labs(y = "Average Total Population",
          color = "Fitness Cost", 
          linetype = "Maternal \nCarryover") +
-    ylim(0, 10000) +
+    #ylim(0, 10000) +
     scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
     theme_light() +
     #xlim(0, 30) +
     scale_colour_manual(values = cbFun)
     
   female_plot <- female_plot +
-    theme(
-      strip.background = element_rect(
-      color=NULL, fill=NULL, size=0, linetype="blank"),
-      strip.text.x = element_text(angle = 0, hjust = 0),
-      text = element_text(size = 10, family = "Arial"))
+    theme(strip.text.x = element_text(size=12, color = "black", hjust = 0, face = "bold"),
+          strip.background = element_blank(), #element_rect(fill="white", size=0, color="white", alpha = 0),
+          panel.spacing = unit(8, "pt")) #,
+      #strip.text.x = element_text(angle = 0, hjust = 0),
+      #text = element_text(size = 10, family = "Arial"))
   
   female_plot
 }
-```
 
-
-# 10% introduction
-
-get separate panels
-```{r}
-tenPercent_replacement <- get_replacement_data("final_data/onePartner_haploidFitCosts_noSterile",
-                     "final_data/fivePartner_haploidFitCosts_noSterile",
-                     "final_data/twentyPartner_haploidFitCosts_noSterile") %>% plot_replacement_data()
-
-tenPercent_replacement
-
-tenPercent_femSterile <- get_suppression_data("final_data/onePartner_female_sterility",
-                     "final_data/fivePartner_female_sterility",
-                     "final_data/twentyPartner_female_sterility") %>% plot_suppression_data()
-
-tenPercent_femSterile
-
-tenPercent_maleSterile <- get_suppression_data("final_data/onePartner_male_sterility",
-                     "final_data/fivePartner_male_sterility",
-                     "final_data/twentyPartner_male_sterility") %>% plot_suppression_data()
-
-tenPercent_maleSterile
-```
-
-# 20% introduction
-
-get separate panels
-```{r}
-twentyPercent_replacement <- get_replacement_data("final_data/int20_onePartner_haploidFitCosts_noSterile",
-                     "final_data/int20_fivePartner_haploidFitCosts_noSterile",
-                     "final_data/int20_twentyPartner_haploidFitCosts_noSterile") %>% plot_replacement_data()
-
-twentyPercent_replacement
-
-twentyPercent_femSterile <- get_suppression_data("final_data/int20_onePartner_female_sterility",
-                     "final_data/int20_fivePartner_female_sterility",
-                     "final_data/int20_twentyPartner_female_sterility") %>% plot_suppression_data()
-
-twentyPercent_femSterile
-
-twentyPercent_maleSterile <- get_suppression_data("final_data/int20_onePartner_male_sterility",
-                     "final_data/int20_fivePartner_male_sterility",
-                     "final_data/int20_twentyPartner_male_sterility") %>% plot_suppression_data()
-
-twentyPercent_maleSterile
-```
-
-
-# Replacement - 20% introduction
-
-```{r}
-# get sexless total data for each 
-total_replacement_one <- getTotalData("final_data/int20_onePartner_haploidFitCosts_noSterile") %>%
-  clean_replacement(., number_partners = 1)
-
-total_replacement_five <- getTotalData("final_data/int20_fivePartner_haploidFitCosts_noSterile") %>%
-  clean_replacement(number_partners = 5)
-
-total_replacement_twenty <- getTotalData("final_data/int20_twentyPartner_haploidFitCosts_noSterile") %>%
-  clean_replacement(number_partners = 20)
-
-# combine and make sexless
-total_replacement <- rbind(total_replacement_one, total_replacement_five) %>% 
-  rbind(., total_replacement_twenty) %>%
-  group_by(Generation, fitCost, introF, Run, numPartners) %>%
-  summarise(Count = sum(Count))
-
-# get sexless allele data for each
-allele_replacement_one <- getAlleleData("final_data/int20_onePartner_haploidFitCosts_noSterile") %>%
-  clean_replacement(number_partners = 1)
-
-allele_replacement_five <- getAlleleData("final_data/int20_fivePartner_haploidFitCosts_noSterile") %>%
-  clean_replacement(number_partners = 5)
-
-allele_replacement_twenty <- getAlleleData("final_data/int20_twentyPartner_haploidFitCosts_noSterile") %>%
-  clean_replacement(number_partners = 20)
-
-# combine and make sexless
-allele_replacement <- rbind(allele_replacement_one, allele_replacement_five) %>% 
-  rbind(., allele_replacement_twenty) %>% 
-  group_by(Generation, fitCost, introF, Allele, Run, numPartners) %>%
-  summarise(Allele_Count = sum(Count))
-
-```
-
-###graph!
-```{r}
-plot <- allele_replacement %>%
-  filter(Allele == "V") %>%
-  filter(fitCost != 0.4, fitCost != 0.2) %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, fitCost, introF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  filter(avg_percentage != 0) %>%
-  ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
-             fill = fitCost)) +
-  geom_line(size = 0.8) +
-  scale_linetype_binned() +
-  facet_wrap(~numPartners, ncol = 3, 
-             labeller = as_labeller(c(`1` = "One Partner",
-                                      `5` = "Five Partners",
-                                      `20` = "Twenty Partners"))) +
-  theme_light() +
-  ylab("Percent ClvR") +
-  labs(color = "Fitness Cost") +
-  scale_colour_manual(values = cbFun) +
-  scale_fill_manual(values = cbFun)
+plot_suppression_runwise <- function(dataset, labels = c("", "", ""), top_label = FALSE){
+  if(top_label)labels <- paste(c("One Partner\n", "Five Partners\n", "Twenty Partners\n"), labels)
   
-fullPlot <- plot +
-  theme(
-    strip.background = element_rect(
-    color=NULL, fill=NULL, size=0, linetype="blank"),
-    #strip.text.x = element_text(angle = 0, hjust = 0),
-    text = element_text(size = 10, family = "Arial"))
-
-fullPlot
-```
-
-# Females homozygous sterile - 20% introduction
-```{r}
-total_fsterile_one <- getTotalData("final_data/int20_onePartner_female_sterility") %>%
-  clean_sterility(., number_partners = 1)
-
-total_fsterile_five <- getTotalData("final_data/int20_fivePartner_female_sterility") %>%
-  clean_sterility(., number_partners = 5)
-
-total_fsterile_twenty <- getTotalData("final_data/int20_twentyPartner_female_sterility") %>%
-  clean_sterility(., number_partners = 20)
-
-total_fsterile <- rbind(total_fsterile_one, total_fsterile_five) %>%
-  rbind(., total_fsterile_twenty) %>%
-  group_by(Generation, Run, mcProb, fitCost, numPartners) %>%
-  summarise(Count = sum(Count))
+  dataset <- dataset %>%
+    filter(fitCost != 0.2) #, mcProb %in% c(0, 0.3))
   
-```
-
-### graph data
-```{r}
-total_fsterile %>% 
-  ggplot(aes(x = Generation, y = Count, group = interaction(fitCost, Run), color = fitCost)) +
-  geom_line() +
-  facet_grid(mcProb ~ numPartners) +
-  xlim(0, 50)
-
-female_plot <- total_fsterile %>%
-  filter(fitCost != 0.2) %>%
-  filter(mcProb %in% c(0, 0.3)) %>%
-  group_by(Generation, mcProb, fitCost, numPartners) %>%
-  summarise(avg_Count = mean(Count)) %>% # remove Runs
-  ggplot(aes(x = Generation, y = avg_Count, group = interaction(fitCost, mcProb), color = fitCost, linetype = mcProb)) +
-  geom_line(size = 0.8) +
-  facet_wrap(~numPartners, ncol = 3,
-             labeller = as_labeller(c(`1` = "One Partner",
-                                      `5` = "Five Partners",
-                                      `20` = "Twenty Partners"))) +
-  labs(y = "Average Total Population",
-       color = "Fitness Cost", 
-       linetype = "Maternal \nCarryover") +
-  ylim(0, 10000) +
-  scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
-  theme_light() +
-  #xlim(0, 30) +
-  scale_colour_manual(values = cbFun)
+  dataset_oneP <- dataset %>% filter(numPartners == 1)
+  dataset_multiP <- dataset %>% filter(numPartners > 1)
   
-female_plot <- female_plot +
-  theme(
-    strip.background = element_rect(
-    color=NULL, fill=NULL, size=0, linetype="blank"),
-    strip.text.x = element_text(angle = 0, hjust = 0),
-    text = element_text(size = 10, family = "Arial"))
-
-female_plot
-```
-
-# Males homozygous sterile - 20% introduction
-```{r}
-
-total_msterile_one <- getTotalData("final_data/int20_onePartner_male_sterility") %>%
-  clean_sterility(., number_partners = 1)
-
-total_msterile_five <- getTotalData("final_data/int20_fivePartner_male_sterility") %>%
-  clean_sterility(., number_partners = 5)
-
-total_msterile_twenty <- getTotalData("final_data/int20_twentyPartner_male_sterility") %>%
-  clean_sterility(., number_partners = 20)
-
-total_msterile <- rbind(total_msterile_one, total_msterile_five) %>%
-  rbind(., total_msterile_twenty) %>%
-  group_by(Generation, Run, mcProb, fitCost, numPartners) %>%
-  summarise(Count = sum(Count))
+  avg_dataset <- dataset %>%
+    group_by(Generation, mcProb, fitCost, numPartners) %>%
+    summarize(Count = mean(Count)) %>%
+    ungroup()
   
-```
-
-### graph data
-```{r}
-male_plot <- total_msterile %>%
-  filter(fitCost != 0.2) %>%
-  filter(mcProb %in% c(0, 0.3)) %>%
-  group_by(Generation, mcProb, fitCost, numPartners) %>%
-  summarise(avg_Count = mean(Count)) %>% # remove Runs
-  ggplot(aes(x = Generation, y = avg_Count, group = interaction(fitCost, mcProb), color = fitCost, linetype = mcProb)) +
-  geom_line(size = 0.8) +
-  facet_wrap(~numPartners, ncol = 3,
-             labeller = as_labeller(c(`1` = "One Partner",
-                                      `5` = "Five Partners",
-                                      `20` = "Twenty Partners"))) +
-  labs(y = "Average Total Population",
-       color = "Fitness Cost", 
-       linetype = "Maternal \nCarryover") +
-  ylim(0, 10000) +
-  scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
-  theme_light() +
-  #xlim(0, 30) +
-  scale_colour_manual(values = cbFun)
+  female_plot <- dataset_oneP %>%
+    ggplot(aes(x = Generation, y = Count, group = paste(fitCost, mcProb, Run), color = fitCost, linetype = mcProb)) +
+    geom_line(linewidth = 0.6, alpha = 0.35) +
+    geom_line(data = dataset_multiP, linewidth = 0.5, alpha = 0.2) +
+    geom_line(data = avg_dataset, linewidth = 1, 
+              aes(group = paste(fitCost, mcProb))) +
+    facet_wrap(~numPartners, ncol = 3,
+               labeller = as_labeller(c(`1` = labels[1],
+                                        `5` = labels[2],
+                                        `20` = labels[3]))) +
+    labs(y = "Average Total Population",
+         color = "Fitness Cost", 
+         linetype = "Maternal \nCarryover") +
+    ylim(0, 10000) +
+    scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
+    theme_light() +
+    scale_colour_manual(values = cbFun)
   
-male_plot <- male_plot +
-  theme(
-    strip.background = element_rect(
-    color=NULL, fill=NULL, size=0, linetype="blank"),
-    strip.text.x = element_text(angle = 0, hjust = 0),
-    text = element_text(size = 10, family = "Arial"))
-
-male_plot
+  female_plot <- female_plot +
+    theme(strip.text.x = element_text(size=12, color = "black", hjust = 0, face = "bold"),
+          strip.background = element_blank(), #element_rect(fill="white", size=0, color="white", alpha = 0),
+          panel.spacing = unit(8, "pt"))
+}
 ```
 
-# Resistant Mutations
-## Modification
 
-Write functions! to reduce clutter later
-```{r}
-get_RM_data <- function(noRM_fn, RM_fn, noRM_fn_label, RM_fn_label) {
-  # pull total data
-  total_replacement_noRM <- getTotalData(noRM_fn) %>%
-     clean_replacement(., number_partners = noRM_fn_label)
-  total_replacement_RM <- getTotalData(RM_fn) %>%
-     clean_replacement(., number_partners = RM_fn_label)
-  # combine and desex
-  total_replacement <- rbind(total_replacement_noRM, total_replacement_RM) %>% 
-    group_by(Generation, fitCost, introF, Run, numPartners) %>%
+## No Mutations
+
+Figure 5: 10% Introduction Frequency
+
+```{r, fig.height = 7, fig.width = 8}
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+
+tenPercent_replacement <- get_replacement_data("arabidopsis_data/haploidFitCosts_int10_onePartner_noSterile",
+                     "arabidopsis_data/haploidFitCosts_int10_fivePartner_noSterile",
+                     "arabidopsis_data/haploidFitCosts_int10_twentyPartner_noSterile") %>% filter(fitCost < 0.2) %>%
+    plot_replacement_panels_noMC("V", "Percent ClvR", labels = c("a", "b", "c"), legend = FALSE, top_label = TRUE)
+
+#'atop(bold("This should be bold"),"this should not")'
+
+tenPercent_femSterile <- get_suppression_data("arabidopsis_data/sterile_females_int10_onePartner2",
+                     "arabidopsis_data/sterile_females_int10_fivePartner2",
+                     "arabidopsis_data/sterile_females_int10_twentyPartner2") %>%
+  filter(mcProb < 0.5) %>% 
+  plot_suppression_data(labels = c("d", "e", "f"))
+
+tenPercent_maleSterile <- get_suppression_data("arabidopsis_data/sterile_males_int10_onePartner2",
+                     "arabidopsis_data/sterile_males_int10_fivePartner2",
+                     "arabidopsis_data/sterile_males_int10_twentyPartner2") %>% 
+  filter(mcProb < 0.5) %>% 
+  plot_suppression_data(labels = c("g", "h", "i")) +
+  theme(legend.position = "none")
+
+fig <- ggarrange(null_plot,
+                 tenPercent_replacement, 
+                 null_plot,
+                 tenPercent_femSterile + theme(legend.position = "none"),
+                 null_plot,
+                 tenPercent_maleSterile,
+          nrow = 6, 
+          labels = c("Replacement", "",
+                     "Suppression: Females Sterile", "",
+                     "Suppression: Males Sterile", ""),
+          heights = c(0.12, 1.1, 0.12, 1, 0.12, 1),
+          hjust = 0) %>%
+  annotate_figure(fig.lab = "10% introduction frequency", top = " ")
+
+
+fig1 <- ggarrange(fig, as_ggplot(get_legend(tenPercent_femSterile)),
+                  widths = c(5, 1))
+fig1
+
+ggsave("final_figures/Figure_5.svg", plot = fig1,
+       height = fig_height, width = fig_width)
+ggsave("final_figures/Figure_5.png", plot = fig1,
+       height = fig_height, width = fig_width, bg = "white")
+```
+
+Supplemental Figure, 10% introduction frequency suppression with maternal carryover 1
+
+```{r, fig.height = 5, fig.width = 8}
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+
+tenPercent_femSterile_s <- get_suppression_data("arabidopsis_data/sterile_females_int10_onePartner2",
+                     "arabidopsis_data/sterile_females_int10_fivePartner2",
+                     "arabidopsis_data/sterile_females_int10_twentyPartner2") %>%
+  plot_suppression_data(labels = c("a", "b", "c"), top_label = TRUE)
+
+tenPercent_maleSterile_s <- get_suppression_data("arabidopsis_data/sterile_males_int10_onePartner2",
+                     "arabidopsis_data/sterile_males_int10_fivePartner2",
+                     "arabidopsis_data/sterile_males_int10_twentyPartner2") %>% 
+  plot_suppression_data(labels = c("d", "e", "f")) +
+  theme(legend.position = "none")
+
+fig <- ggarrange(null_plot,
+                 tenPercent_femSterile_s + theme(legend.position = "none"),
+                 null_plot,
+                 tenPercent_maleSterile_s,
+          nrow = 4, 
+          labels = c("Suppression: Females Sterile", "",
+                     "Suppression: Males Sterile", ""),
+          heights = c(0.12, 1.1, 0.12, 1, 0.12, 1),
+          hjust = 0) %>%
+  annotate_figure(fig.lab = "10% introduction frequency", top = " ")
+
+
+fig1s <- ggarrange(fig, as_ggplot(get_legend(tenPercent_femSterile_s)),
+                  widths = c(5, 1))
+fig1s
+
+ggsave("final_figures/X_Figure_8-MC1_fig_5.svg", plot = fig1s,
+       height = fig_height, width = fig_width)
+ggsave("final_figures/X_Figure_8-MC1_fig_5.png", plot = fig1s,
+       height = fig_height, width = fig_width, bg = "white")
+```
+
+
+Supplemental Figure, 20% Introduction Frequency
+
+```{r, fig.height = 7, fig.width = 8}
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+
+twentyPercent_replacement <- get_replacement_data("arabidopsis_data/haploidFitCosts_int20_onePartner_noSterile",
+                     "arabidopsis_data/haploidFitCosts_int20_fivePartner_noSterile",
+                     "arabidopsis_data/haploidFitCosts_int20_twentyPartner_noSterile") %>%filter(fitCost < 0.2) %>%
+    plot_replacement_panels_noMC("V", "Percent ClvR", labels = c("a", "b", "c"), legend = FALSE, top_label = TRUE)
+
+twentyPercent_femSterile <- get_suppression_data("arabidopsis_data/sterile_females_int20_onePartner",
+                     "arabidopsis_data/sterile_females_int20_fivePartner",
+                     "arabidopsis_data/sterile_females_int20_twentyPartner") %>% plot_suppression_data(labels = c("d", "e", "f"))
+
+twentyPercent_maleSterile <- get_suppression_data("arabidopsis_data/sterile_males_int20_onePartner",
+                     "arabidopsis_data/sterile_males_int20_fivePartner",
+                     "arabidopsis_data/sterile_males_int20_twentyPartner") %>% plot_suppression_data(labels = c("g", "h", "i")) +
+  theme(legend.position = "none")
+
+fig <- ggarrange(null_plot,
+                 twentyPercent_replacement, 
+                 null_plot,
+                 twentyPercent_femSterile + theme(legend.position = "none"),
+                 null_plot,
+                 twentyPercent_maleSterile,
+          nrow = 6, 
+          labels = c("Replacement", "",
+                     "Suppression: Females Sterile", "",
+                     "Suppression: Males Sterile", ""),
+          heights = c(0.12, 1.1, 0.12, 1, 0.12, 1),
+          hjust = 0) %>%
+  annotate_figure(fig.lab = "20% introduction frequency", top = " ")
+fig
+
+fig2 <- ggarrange(fig, as_ggplot(get_legend(twentyPercent_femSterile)),
+                  widths = c(5, 1))
+fig2
+
+ggsave("final_figures/X_Figure_7-20percent_fig_5.svg", plot = fig2,
+       height = 7, width = 8) #fig_height, width = fig_width)
+ggsave("final_figures/X_Figure_7-20percent_fig_5.png", plot = fig2,
+       height = 7, width = 8, bg = "white") #fig_height, width = fig_width)
+```
+
+
+
+## RD and LOF
+
+Figure 6: Recombination Distance and Loss of Function Cas9 (1% of 10%), for population modification
+
+```{r, fig.height=9, fig.width=8}
+
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+
+# set up recombination distance
+
+RD_set <- get_replacement_data("arabidopsis_data/rd_1_modification_onePartner",
+                               "arabidopsis_data/rd_1_modification_fivePartner",
+                               "arabidopsis_data/rd_1_modification_twentyPartner")
+
+rd_rescue <- plot_replacement_panels_noMC(RD_set, "R", "\nPercent Rescue/Cargo/gRNAs", legend = FALSE, top_label = TRUE)
+
+rd_cas9 <- plot_replacement_panels_noMC(RD_set, "V", "\nPercent Cas9")
+
+rd_combo <- ggarrange(rd_rescue, rd_cas9 + theme(legend.position = "none"), nrow = 2, heights = c(1.1, 1), labels = c("a", "b"))
+
+# set up loss-of-function
+
+LOF_set <- get_replacement_data("arabidopsis_data/lof_modification_if1_fs_onePartner",
+                                "arabidopsis_data/lof_modification_if1_fs_fivePartner",
+                                "arabidopsis_data/lof_modification_if1_fs_twentyPartner")
+
+LOF_fullClvr <- LOF_set %>%
+  filter(Allele %in% c("V", "R")) %>%
+  mutate(Allele = "V") %>%
+  group_by(Generation, fitCost, mcProb, Run, numPartners, Allele) %>%
+  summarize(Allele_Count = sum(Allele_Count),
+            Count = min(Count)) # Count should be the same for both, so Count just gets to be Count
+
+LOF_cas9 <- plot_replacement_panels_noMC(LOF_fullClvr, "V", "Percent ClvR\n(including Rescue-Only", legend = FALSE)
+
+LOF_rescue <- plot_replacement_panels_noMC(LOF_set, "V", "Functioning ClvR\n(not including Rescue-Only)", legend = FALSE)
+
+LOF_combo <- ggarrange(LOF_cas9, LOF_rescue, nrow = 2, heights = c(1.1, 1), labels = c("c", "d"))
+
+# arrange and save
+
+fig <- ggarrange(null_plot,
+                 rd_combo, 
+                 null_plot,
+                 LOF_combo,
+                 nrow = 4,
+          labels = c("Recombination Distance", "", "Loss of Function Cas9, 1% of 10%", ""),
+          heights = c(0.06, 1.05, 0.08, 1), hjust=0)
+
+fig <- ggarrange(fig, as_ggplot(get_legend(rd_cas9)), ncol = 2, widths = c(5, 1))
+
+fig
+
+ggsave("RD_LOF_mod_i1.svg", plot = fig,
+       height = fig_height, width = fig_width, bg = "white")
+ggsave("RD_LOF_mod_i1.png", plot = fig,
+       height = fig_height, width = fig_width, bg = "white")
+```
+
+
+Figure 6: Recombination Distance and Loss of Function Cas9 (20% of 10%), for population modification
+
+```{r, fig.height=9, fig.width=8}
+
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+
+# set up recombination distance
+
+RD_set <- get_replacement_data("arabidopsis_data/rd_1_modification_onePartner",
+                               "arabidopsis_data/rd_1_modification_fivePartner",
+                               "arabidopsis_data/rd_1_modification_twentyPartner")
+
+rd_rescue <- plot_replacement_panels_noMC(RD_set, "R", "\nPercent Rescue/Cargo/gRNAs", legend = FALSE, top_label = TRUE)
+
+rd_cas9 <- plot_replacement_panels_noMC(RD_set, "V", "\nPercent Cas9")
+
+rd_combo <- ggarrange(rd_rescue, rd_cas9 + theme(legend.position = "none"), nrow = 2, heights = c(1.1, 1), labels = c("a", "b"))
+
+# set up loss-of-function
+
+LOF_set <- get_replacement_data("arabidopsis_data/lof_modification_if1_fs_onePartner",
+                                "arabidopsis_data/lof_modification_if1_fs_fivePartner",
+                                "arabidopsis_data/lof_modification_if1_fs_twentyPartner")
+
+LOF_fullClvr <- LOF_set %>%
+  filter(Allele %in% c("V", "R")) %>%
+  mutate(Allele = "V") %>%
+  group_by(Generation, fitCost, mcProb, Run, numPartners, Allele) %>%
+  summarize(Allele_Count = sum(Allele_Count),
+            Count = min(Count)) # Count should be the same for both, so Count just gets to be Count
+
+LOF_cas9 <- plot_replacement_panels_noMC(LOF_fullClvr, "V", "Percent ClvR\n(including Rescue-Only", legend = FALSE)
+
+LOF_rescue <- plot_replacement_panels_noMC(LOF_set, "V", "Functioning ClvR\n(not including Rescue-Only)", legend = FALSE)
+
+LOF_combo <- ggarrange(LOF_cas9, LOF_rescue, nrow = 2, heights = c(1.1, 1), labels = c("c", "d"))
+
+# arrange and save
+
+fig <- ggarrange(null_plot,
+                 rd_combo, 
+                 null_plot,
+                 LOF_combo,
+                 nrow = 4,
+          labels = c("Recombination Distance", "", "Loss of Function Cas9, 1% of 10%", ""),
+          heights = c(0.06, 1.05, 0.08, 1), hjust=0)
+
+fig <- ggarrange(fig, as_ggplot(get_legend(rd_cas9)), ncol = 2, widths = c(5, 1))
+
+fig
+
+ggsave("final_figures/Figure_6-RD_LOF_modification_i20.svg", plot = fig,
+       height = fig_height, width = fig_width, bg = "white")
+ggsave("final_figures/Figure_6-RD_LOF_modification_i20.png", plot = fig,
+       height = fig_height, width = fig_width, bg = "white")
+```
+
+### Suppression
+
+Figure 7: Just Loss of Function, 1% of 10%
+
+```{r, fig.height=2.5, fig.width=8}
+
+fig_height = 5
+fig_width = 8
+
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+
+LOF_sup <- get_suppression_data("arabidopsis_data/lof_suppression_if1_fs_onePartner",
+                                "arabidopsis_data/lof_suppression_if1_fs_fivePartner",
+                                "arabidopsis_data/lof_suppression_if1_fs_twentyPartner") %>% 
+  plot_suppression_data(top_label = TRUE)
+
+fig <- ggarrange(LOF_sup + theme(legend.position = "none"), as_ggplot(get_legend(LOF_sup)), ncol = 2, widths = c(5, 1)) %>%
+  annotate_figure(fig.lab = "Loss of Function Cas9, 1% of 10%",
+                  top = " ")
+
+fig
+
+ggsave("final_figures/Figure_7-LOF_if1_suppression.svg", plot = fig,
+       height = fig_height, width = fig_width, bg = "white")
+ggsave("final_figures/Figure_7-LOF_if1_suppression.png", plot = fig,
+       height = fig_height, width = fig_width, bg = "white")
+
+```
+
+Supplemental Figure, Suppression for Recombination Distance and 20% of 10% Loss of Function
+
+```{r, fig.height=5, fig.width=8}
+
+fig_height = 5
+fig_width = 8
+
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+
+LOF_sup <- get_suppression_data("arabidopsis_data/lof_suppression_if20_fs_onePartner",
+                                "arabidopsis_data/lof_suppression_if20_fs_fivePartner",
+                                "arabidopsis_data/lof_suppression_if20_fs_twentyPartner") %>% 
+  plot_suppression_runwise(top_label = TRUE)
+
+rd_sup <- get_suppression_data("arabidopsis_data/rd_1_suppression_fs_onePartner",
+                               "arabidopsis_data/rd_1_suppression_fs_fivePartner",
+                               "arabidopsis_data/rd_1_suppression_fs_twentyPartner") %>% 
+  plot_suppression_runwise() +
+  theme(legend.position = "none")
+
+fig <- ggarrange(null_plot, 
+                 annotate_figure(LOF_sup + theme(legend.position = "none"), fig.lab = "a", fig.lab.face = "bold"),
+                 null_plot,
+                 annotate_figure(rd_sup, fig.lab = "b", fig.lab.face = "bold"),
+          nrow = 4,
+          labels = c("Loss of Function Cas9, 20% of 10%", "", "Recombination Distance", ""),
+          heights = c(0.15, 1.1, 0.15, 1), hjust=0)
+
+fig <- ggarrange(fig, as_ggplot(get_legend(LOF_sup)), ncol = 2, widths = c(5, 1))
+
+fig
+
+ggsave("final_figures/X_Figure_9-LOF_RD_suppression.svg", plot = fig,
+       height = fig_height, width = fig_width, bg = "white")
+ggsave("final_figures/X_Figure_9-LOF_RD_suppression.png", plot = fig,
+       height = fig_height, width = fig_width, bg = "white")
+```
+
+
+
+## Resistant Mutations
+
+### Modification
+
+10% standing resistance (5% allele)
+
+```{r, fig.height=4, fig.width=8}
+
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+
+# set up recombination distance
+
+Res_mod <- get_replacement_data("arabidopsis_data/resistant_modification_heterozygotes_int10_onePartner",
+                               "arabidopsis_data/resistant_modification_heterozygotes_int10_fivePartner",
+                               "arabidopsis_data/resistant_modification_heterozygotes_int10_twentyPartner") %>%
+  filter(fitCost < 0.2)
+
+res_cas9 <- plot_replacement_panels_noMC(Res_mod, "V", "\nPercent ClvR", top_label = TRUE, legend = FALSE)
+
+res_res <- plot_replacement_panels_noMC(Res_mod, "R", "\nPercent Resistant", legend = TRUE)
+
+res_combo <- ggarrange(null_plot, res_cas9, res_res + theme(legend.position = "none"), nrow = 3, heights = c(0.1, 1.1, 1), labels = c("", "a", "b")) %>%
+  annotate_figure(fig.lab = "Resistant Mutation & Replacement, 10%")
+
+fig <- ggarrange(res_combo, as_ggplot(get_legend(res_res)), ncol = 2, widths = c(5, 1))
+
+```
+
+
+2% standing resistance (1% allele)
+
+```{r, fig.height=4, fig.width=8}
+
+fig_height = 4
+fig_width = 8
+
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+
+Res_mod <- get_replacement_data("arabidopsis_data/resistant_modification_heterozygotes_int2_onePartner",
+                               "arabidopsis_data/resistant_modification_heterozygotes_int2_fivePartner",
+                               "arabidopsis_data/resistant_modification_heterozygotes_int2_twentyPartner") %>%
+  filter(fitCost < 0.2)
+
+res_cas9 <- plot_replacement_panels_noMC(Res_mod, "V", "\nPercent ClvR", top_label = TRUE, legend = FALSE)
+
+res_res <- plot_replacement_panels_noMC(Res_mod, "R", "\nPercent Resistant", legend = TRUE)
+
+res_combo <- ggarrange(null_plot, res_cas9, res_res + theme(legend.position = "none"), nrow = 3, heights = c(0.1, 1.1, 1), labels = c("", "a", "b")) %>%
+  annotate_figure(fig.lab = "Resistant Mutation & Replacement, 2%")
+
+fig2 <- ggarrange(res_combo, as_ggplot(get_legend(res_res)), ncol = 2, widths = c(5, 1))
+
+```
+
+
+### Suppression
+
+```{r, fig.height = 7, fig.width = 4}
+
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
+fig_height = 7
+fig_width = 4
+
+RS_total <- getTotalData("arabidopsis_data/resistant_suppression_into0001percent_int10_fs_onePartner") %>%
+  clean_sterility(number_partners = 1) %>%
+  group_by(Generation, fitCost, mcProb, Run, numPartners) %>%
     summarise(Count = sum(Count))
-  # pull allele data
-  allele_replacement_noRM <- getAlleleData(noRM_fn) %>%
-    clean_replacement(number_partners = noRM_fn_label)
-  allele_replacement_RM <- getAlleleData(RM_fn) %>%
-    clean_replacement(number_partners = RM_fn_label)
-  # combine and desex
-  allele_replacement <- rbind(allele_replacement_noRM, allele_replacement_RM) %>%
-    group_by(Generation, fitCost, introF, Allele, Run, numPartners) %>%
+  
+RS_allele <- getAlleleData("arabidopsis_data/resistant_suppression_into0001percent_int10_fs_onePartner") %>%
+  clean_sterility(number_partners = 1) %>%
+    group_by(Generation, fitCost, mcProb, Allele, Run, numPartners) %>%
     summarise(Allele_Count = sum(Count))
-  merge(allele_replacement, total_replacement)
-}
 
-plot_RM_data <- function(dataset){
-  plot <- dataset %>%
-    filter(Allele == "V") %>%
-    filter(introF == 0.1) %>%
-    filter(fitCost != 0.4, fitCost != 0.2) %>%
-    mutate(percentage = Allele_Count / (2*Count)) %>%
-    group_by(Generation, fitCost, introF, numPartners, Allele) %>%
-    summarise(avg_percentage = mean(percentage)) %>%
-    filter(avg_percentage != 0) %>%
-    ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
-               fill = fitCost)) +
-    geom_line(size = 0.8) +
-    scale_linetype_binned() +
-    facet_wrap(~numPartners, ncol = 3) + #, 
-               #labeller = as_labeller(c(`1` = "One Partner",
-              #                          `5` = "Five Partners",
-              #                          `20` = "Twenty Partners"))) +
-    theme_light() +
-    ylab("Percent ClvR") +
-    labs(color = "Fitness Cost") +
-    scale_colour_manual(values = cbFun) +
-    scale_fill_manual(values = cbFun) + xlim(NA, 20)
-  
-  plot +
-  theme(
-    strip.background = element_rect(
-    color=NULL, fill=NULL, size=0, linetype="blank"),
-    #strip.text.x = element_text(angle = 0, hjust = 0),
-    text = element_text(size = 10, family = "Arial"))
-}
-```
-
-
-Get one partner, five partner, and twenty partner RM
-```{r}
-new_attempt <- get_RM_data(
-  "final_data/onePartner_haploidFitCosts_noSterile",
-  "12-15/mutation_data/resistant_modification_onePartner_haploidFitCosts_noSterile",
-  "one partner no RM",
-  "one partner with RM")
-
-plot_RM_data(new_attempt)
-
-get_RM_data(
-  "final_data/fivePartner_haploidFitCosts_noSterile",
-  "12-15/mutation_data/resistant_modification_fivePartner_haploidFitCosts_noSterile",
-  "five partner no RM",
-  "five partner with RM") %>% plot_RM_data()
-
-get_RM_data(
-  "final_data/twentyPartner_haploidFitCosts_noSterile",
-  "12-15/mutation_data/resistant_modification_twentyPartner_haploidFitCosts_noSterile",
-  "twenty partner no RM",
-  "twenty partner with RM") %>% plot_RM_data()
-
-RM_manyPercents <- get_RM_data(
-  "final_data/onePartner_haploidFitCosts_noSterile",
-  "12-15/mutation_data/RM_manypercents_onePartner_haploidFitCosts_noSterile",
-  "no RM",
-  "RM, 20% resistant")
-
-plot <- RM_manyPercents %>%
-    filter(Allele == "C") %>%
-    filter((fitCost < 0.2) | (numPartners == "RM, 20% resistant")) %>%
-    mutate(percentage = Allele_Count / (2*Count)) %>%
-    group_by(Generation, fitCost, introF, numPartners, Allele) %>%
-    summarise(avg_percentage = mean(percentage)) %>%
-    filter(avg_percentage != 0) %>%
-    ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
-               fill = fitCost)) +
-    geom_line(size = 0.8) +
-    scale_linetype_binned() +
-    facet_wrap(~numPartners, ncol = 3) + #, 
-               #labeller = as_labeller(c(`1` = "One Partner",
-              #                          `5` = "Five Partners",
-              #                          `20` = "Twenty Partners"))) +
-    theme_light() +
-    ylab("Percent Cleaved Target") +
-    labs(color = "Fitness Cost") +
-    scale_colour_manual(values = cbFun) +
-    scale_fill_manual(values = cbFun) + xlim(NA, 20)
-  
-plot +
-  theme(
-    strip.background = element_rect(
-    color=NULL, fill=NULL, size=0, linetype="blank"),
-    #strip.text.x = element_text(angle = 0, hjust = 0),
-    text = element_text(size = 10, family = "Arial"))
-
-RM_manyPercents %>%
-    filter((fitCost < 0.2) | (numPartners == "RM, 20% resistant")) %>%
-    mutate(percentage = Allele_Count / (2*Count)) %>%
-    group_by(Generation, fitCost, introF, numPartners, Allele) %>%
-    summarise(avg_percentage = mean(percentage)) %>%
-    filter(avg_percentage != 0) %>%
-    ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
-               fill = fitCost)) +
-    geom_line(size = 0.8) +
-    scale_linetype_binned() +
-    facet_grid(numPartners~Allele) + #, 
-               #labeller = as_labeller(c(`1` = "One Partner",
-              #                          `5` = "Five Partners",
-              #                          `20` = "Twenty Partners"))) +
-    theme_light() +
-    ylab("Percent ClvR") +
-    labs(color = "Fitness Cost") +
-    scale_colour_manual(values = cbFun) +
-    scale_fill_manual(values = cbFun) + xlim(NA, 20)
-
-```
-
-
-One Partner RM, but for Diploid vs. Haploid vs. Haploid&Diploid fitness costs
-```{r}
-fig <- get_RM_data(
-  "final_data/onePartner_haploidFitCosts_noSterile",
-  "12-15/mutation_data/resistant_modification_onePartner_haploidFitCosts_noSterile",
-  "no RM, one partner",
-  "20% RM, one partner. Haploid FC") %>%
-  filter(Allele == "V") %>%
-  filter(fitCost != 0.4, fitCost != 0.2) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, fitCost, introF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  filter(avg_percentage != 0) %>%
-  ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
-             fill = fitCost)) +
-  geom_line(size = 0.8) +
-  scale_linetype_binned() +
-  facet_wrap(~numPartners, ncol = 3) + #, 
-             #labeller = as_labeller(c(`1` = "One Partner",
-            #                          `5` = "Five Partners",
-            #                          `20` = "Twenty Partners"))) +
-  theme_light() +
-  ylab("Percent ClvR") +
-  labs(color = "Fitness Cost") +
-  scale_colour_manual(values = cbFun) +
-  scale_fill_manual(values = cbFun) + xlim(NA, 40)
-fig
-
-fig <- get_RM_data(
-  "1-4/RM_manypercents_onePartner_diploidFitCosts_noSterile",
-  "1-4/RM_manypercents_onePartner_diploidHaploidFitCosts_noSterile",
-  "20% RM, Diploid FC",
-  "20% RM, Diploid and Haploid FC") %>%
-  filter(Allele == "V") %>%
-  filter(fitCost != 0.4, fitCost != 0.2) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, fitCost, introF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  filter(avg_percentage != 0) %>%
-  ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
-             fill = fitCost)) +
-  geom_line(size = 0.8) +
-  scale_linetype_binned() +
-  facet_wrap(~numPartners, ncol = 3) + #, 
-             #labeller = as_labeller(c(`1` = "One Partner",
-            #                          `5` = "Five Partners",
-            #                          `20` = "Twenty Partners"))) +
-  theme_light() +
-  ylab("Percent ClvR") +
-  labs(color = "Fitness Cost") +
-  scale_colour_manual(values = cbFun) +
-  scale_fill_manual(values = cbFun) + xlim(NA, 40)
-fig
-```
-
-5p, of above
-```{r}
-fig <- get_RM_data(
-  "final_data/fivePartner_haploidFitCosts_noSterile",
-  "1-4/RM_manypercents_fivePartner_haploidFitCosts_noSterile2",
-  "no RM, five partner",
-  "20% RM, five partner. Haploid FC") %>%
-  filter(Allele == "V") %>%
-  filter(ifelse(numPartners == "20% RM, five partner. Haploid FC", introF == 0.2, TRUE)) %>%
-  filter(fitCost != 0.4, fitCost != 0.2) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, fitCost, introF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  filter(avg_percentage != 0) %>%
-  ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
-             fill = fitCost)) +
-  geom_line(size = 0.8) +
-  scale_linetype_binned() +
-  facet_wrap(~numPartners, ncol = 3) + #, 
-             #labeller = as_labeller(c(`1` = "One Partner",
-            #                          `5` = "Five Partners",
-            #                          `20` = "Twenty Partners"))) +
-  theme_light() +
-  ylab("Percent ClvR") +
-  labs(color = "Fitness Cost") +
-  scale_colour_manual(values = cbFun) +
-  scale_fill_manual(values = cbFun) + xlim(NA, 40)
-fig
-
-fig <- get_RM_data(
-  "1-4/RM_manypercents_fivePartner_diploidFitCosts_noSterile",
-  "1-4/RM_manypercents_fivePartner_diploidHaploidFitCosts_noSterile",
-  "20% RM, Diploid FC",
-  "20% RM, Diploid and Haploid FC") %>%
-  filter(Allele == "V") %>% filter(introF == 0.2) %>%
-  filter(fitCost != 0.4, fitCost != 0.2) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, fitCost, introF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  filter(avg_percentage != 0) %>%
-  ggplot(aes(x = Generation, y = avg_percentage, group = fitCost, color = fitCost,
-             fill = fitCost)) +
-  geom_line(size = 0.8) +
-  scale_linetype_binned() +
-  facet_wrap(~numPartners, ncol = 3) + #, 
-             #labeller = as_labeller(c(`1` = "One Partner",
-            #                          `5` = "Five Partners",
-            #                          `20` = "Twenty Partners"))) +
-  theme_light() +
-  ylab("Percent ClvR") +
-  labs(color = "Fitness Cost") +
-  scale_colour_manual(values = cbFun) +
-  scale_fill_manual(values = cbFun) + xlim(NA, 40)
-fig
-```
-
-
-
-## Suppression
-
-### Female Sterility
-
-Write functions, to reduce clutter
-```{r}
-get_RS_data <- function(noRS_fn, RS_fn, noRS_fn_label, RS_fn_label) {
-  # pull total data
-  total_replacement_noRS <- getTotalData(noRS_fn) %>%
-     clean_sterility(., number_partners = noRS_fn_label)
-  total_replacement_RS <- getTotalData(RS_fn) %>%
-     clean_sterility(., number_partners = RS_fn_label)
-  # combine and desex
-  total_replacement <- rbind(total_replacement_noRS, total_replacement_RS) %>% 
-    group_by(Generation, Run, mcProb, fitCost, numPartners) %>%
+RS_adult <- getAdultData("arabidopsis_data/resistant_suppression_into0001percent_int10_fs_onePartner") %>%
+  clean_sterility(number_partners = 1) %>%
+    group_by(Generation, fitCost, mcProb, Genotype, Run, numPartners) %>%
     summarise(Count = sum(Count))
-}
 
-graph_RS_data <- function(dataset) {
-  female_plot <- dataset %>%
-  filter(fitCost != 0.2) %>%
-  filter(mcProb %in% c(0, 0.3)) %>%
-  group_by(Generation, mcProb, fitCost, numPartners) %>%
-  summarise(avg_Count = mean(Count)) %>% # remove Runs
-  ggplot(aes(x = Generation, y = avg_Count, group = interaction(fitCost, mcProb), color = fitCost, linetype = mcProb)) +
-  geom_line(size = 0.8) +
-  facet_wrap(~numPartners, ncol = 3) + #,
-             #labeller = as_labeller(c(`1` = "One Partner",
-            #                          `5` = "Five Partners",
-            #                          `20` = "Twenty Partners"))) +
-  labs(y = "Average Total Population",
-       color = "Fitness Cost", 
-       linetype = "Maternal \nCarryover") +
-  ylim(0, 10000) +
-  scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
-  theme_light() +
-  #xlim(0, 30) +
-  scale_colour_manual(values = cbFun)
-  
-female_plot <- female_plot +
-  theme(
-    strip.background = element_rect(
-    color=NULL, fill=NULL, size=0, linetype="blank"),
-    strip.text.x = element_text(angle = 0, hjust = 0),
-    text = element_text(size = 10, family = "Arial"))
+RS_data <- merge(RS_total, RS_allele) %>%
+  mutate(percent = Allele_Count / (Count * 2))
 
-female_plot
-}
-```
-
-
-Retrieve and Graph Data
-```{r}
-get_RS_data("final_data/onePartner_female_sterility",
-            "12-15/mutation_data/resistant_suppression_onePartner_femSterile",
-            "1p no RS",
-            "1p resistant") %>% graph_RS_data() + labs(title = "10% clvr, resistant 5%")
-
-get_RS_data("final_data/onePartner_male_sterility",
-            "12-15/mutation_data/resistant_suppression_onePartner_maleSterile",
-            "1p no RS",
-            "1p resistant") %>% graph_RS_data() + labs(title = "MALES")
-
-
-get_RS_data("final_data/onePartner_male_sterility",
-            "12-15/mutation_data/RS_1percent_onePartner_femSterile",
-            "1p no RS",
-            "1p resistant") %>% graph_RS_data() + labs(title = "Females, 1%")
-
-get_RS_data("final_data/onePartner_male_sterility",
-            "12-15/mutation_data/RS_05percent_onePartner_femSterile",
-            "1p no RS",
-            "1p resistant") %>% graph_RS_data() + labs(title = "Females, 0.5%")
-
-get_RS_data("final_data/int20_onePartner_male_sterility",
-            "12-15/mutation_data/int20_resistant_suppression_onePartner_femSterile",
-            "1p no RS",
-            "1p resistant") %>% graph_RS_data() + labs(title = "20% clvr, resistant 5%")
-
-```
-
-EXPLORATORY ANALYSIS
-```{r}
-allele_fsterile_one <- getAlleleData("12-15/mutation_data/resistant_suppression_onePartner_femSterile") %>%
-  clean_sterility(., number_partners = 1)
-
-allele_fsterile_one %>% filter(fitCost == 0, mcProb == 0, Run == 1) %>%
-  ggplot(aes(x = Generation, y = Count, group = interaction(Sex, Run), color = Sex)) +
+linear <- RS_data %>% 
+  mutate(Count2 = Count / 10^7) %>%
+  ggplot(aes(x = Generation, y = Count2, group = Run)) +
   geom_line() +
-  facet_wrap(~Allele) + xlim(0, 30) + labs(title = "Run 1")
-allele_fsterile_one %>% filter(fitCost == 0, mcProb == 0, Run == 2) %>%
-  ggplot(aes(x = Generation, y = Count, group = interaction(Sex, Run), color = Sex)) +
-  geom_line() +
-  facet_wrap(~Allele) + xlim(0, 30) + labs(title = "Run 2")
-allele_fsterile_one %>% filter(fitCost == 0, mcProb == 0, Run == 3) %>%
-  ggplot(aes(x = Generation, y = Count, group = interaction(Sex, Run), color = Sex)) +
-  geom_line() +
-  facet_wrap(~Allele) + xlim(0, 30) + labs(title = "Run 3")
-
-total_fsterile_one <- getTotalData("12-15/mutation_data/resistant_suppression_onePartner_femSterile") %>%
-  clean_sterility(., number_partners = 1)
-
-total_fsterile_one %>%
-  filter(fitCost == 0, mcProb == 0) %>%
-  group_by(Generation, Run, mcProb, fitCost, numPartners) %>%
-  summarise(Count = sum(Count)) %>% # desexed
-  ggplot(aes(x = Generation, y = Count, group = interaction(fitCost, mcProb), color = fitCost, linetype = mcProb)) +
-  geom_line(size = 0.8) +
-  facet_wrap(~Run)
-  
-```
-
-# LOF Clvr
-
-## Modification
-
-## Suppression
-
-### Female & Male Sterility
-
-Get and Graph, using previous RS functions
-```{r}
-get_RS_data("final_data/onePartner_female_sterility",
-            "12-15/mutation_data/lof_clvr_suppression_onePartner_femSterile",
-            "1: no lof",
-            "1: lof clvr") %>%
-  graph_RS_data()
-
-get_RS_data("final_data/fivePartner_female_sterility",
-            "12-15/mutation_data/lof_clvr_suppression_fivePartner_femSterile",
-            "5: no lof",
-            "5: lof clvr") %>%
-  graph_RS_data()
-
-get_RS_data("final_data/twentyPartner_female_sterility",
-            "12-15/mutation_data/lof_clvr_suppression_twentyPartner_femSterile",
-            "20: no lof",
-            "20: lof clvr") %>%
-  graph_RS_data()
-
-get_RS_data("final_data/onePartner_male_sterility",
-            "12-15/mutation_data/lof_clvr_suppression_onePartner_maleSterile",
-            "1: no lof",
-            "1: lof clvr") %>%
-  graph_RS_data() + labs(title = "Male Sterility")
-
-get_RS_data("final_data/fivePartner_male_sterility",
-            "12-15/mutation_data/lof_clvr_suppression_fivePartner_maleSterile",
-            "5: no lof",
-            "5: lof clvr") %>%
-  graph_RS_data() + labs(title = "Male Sterility")
-
-get_RS_data("final_data/twentyPartner_male_sterility",
-            "12-15/mutation_data/lof_clvr_suppression_twentyPartner_maleSterile",
-            "20: no lof",
-            "20: lof clvr") %>%
-  graph_RS_data() + labs(title = "Male Sterility")
-```
-
-Exploration - something weird with males
-```{r}
-lof_1pmaleA <- getAlleleData("12-15/mutation_data/lof_clvr_suppression_fivePartner_maleSterile") %>%
-  clean_sterility(., number_partners = "5: lof clvr")
-
-lof_1pmaleA %>%
-  filter(mcProb == 0, fitCost == 0) %>%
-  group_by(Generation, Allele, Run, numPartners) %>%
-  summarize(Count = sum(Count)) %>%
-  ggplot(aes(x = Generation, y = Count, group = Run)) +
-  geom_line() + facet_wrap(~Allele)
-
-lof_1pmaleA %>%
-  filter(mcProb == 0, fitCost == 0, Sex == "Female") %>%
-  ggplot(aes(x = Generation, y = Count, group = Run)) +
-  geom_line() + facet_wrap(~Allele) + labs(title = "female sterile")
-
-lof_1pmaleA %>%
-  filter(mcProb == 0, fitCost == 0, Sex == "Male") %>%
-  ggplot(aes(x = Generation, y = Count, group = Run)) +
-  geom_line() + facet_wrap(~Allele) + labs(title = "male sterile")
-
-lof_1pmaleG <- getAdultData("12-15/mutation_data/lof_clvr_suppression_fivePartner_maleSterile") %>%
-  clean_sterility(., number_partners = "5: lof clvr")
-
-lof_1pmaleG %>%
-  filter(mcProb == 0, fitCost == 0, Sex == "Male", Generation > 30) %>%
-  filter(Count != 0) %>%
-  ggplot(aes(x = Generation, y = Count, group = Run)) +
-  geom_line() + facet_wrap(~Genotype) + labs(title = "males")
-
-lof_1pmaleG %>%
-  filter(mcProb == 0, fitCost == 0, Sex == "Female", Generation > 30) %>%
-  filter(Count != 0) %>%
-  ggplot(aes(x = Generation, y = Count, group = Run)) +
-  geom_line() + facet_wrap(~Genotype) + labs(title = "females")
-```
-
-Reduced Introduction Frequencies
-```{r}
-get_RS_data("1-4/lof_clvr_if1_suppression_onePartner_femSterile",
-            "12-15/mutation_data/lof_clvr_suppression_onePartner_femSterile",
-            "1% LOF clvr",
-            "10% LOF clvr") %>%
-  graph_RS_data()
-
-get_RS_data("1-4/lof_clvr_if2_suppression_onePartner_femSterile",
-            "1-4/lof_clvr_if5_suppression_onePartner_femSterile",
-            "2% LOF clvr",
-            "5% LOF clvr") %>%
-  graph_RS_data()
-
-get_RS_data("1-4/lof_clvr_if2_suppression_fivePartner_femSterile",
-            "12-15/mutation_data/lof_clvr_suppression_fivePartner_femSterile",
-            "2% LOF clvr",
-            "10% LOF clvr") %>%
-  graph_RS_data() + labs(title = "5 partner")
-
-get_RS_data("final_data/fivePartner_female_sterility",
-            "1-4/lof_clvr_if2_suppression_fivePartner_femSterile",
-            "no lof",
-            "2% lof clvr") %>%
-  graph_RS_data() + labs(title = "5 partner")
-
-get_RS_data("1-4/lof_clvr_if2_suppression_twentyPartner_femSterile",
-            "12-15/mutation_data/lof_clvr_suppression_twentyPartner_femSterile",
-            "2% LOF clvr",
-            "10% LOF clvr") %>%
-  graph_RS_data() + labs(title = "20 partner")
-
-get_RS_data("final_data/twentyPartner_female_sterility",
-            "1-4/lof_clvr_if2_suppression_twentyPartner_femSterile",
-            "no lof",
-            "2% lof clvr") %>%
-  graph_RS_data() + labs(title = "20 partner")
-```
-
-# Recombination distance
-
-Get and Graph, using previous RS functions - one partner
-```{r}
-fig <- get_RS_data("final_data/onePartner_female_sterility",
-            "1-4/rd_1_suppression_onePartner_femSterile",
-            "1: no rd",
-            "1: 1 rd") %>%
-  graph_RS_data()
-fig
-
-allele_rd <- getAlleleData("1-4/rd_1_suppression_onePartner_femSterile") %>%
-  clean_sterility(., number_partners = 1) %>%
-  mutate(Allele = factor(Allele, levels = c("C", "A", "V", "W", "R", "X")))
-
-allele_rd %>% filter(fitCost == 0, mcProb == 0, Run == 1) %>%
-  ggplot(aes(x = Generation, y = Count, group = interaction(Sex, Run), color = Sex)) +
-  geom_line() +
-  facet_wrap(~Allele) + xlim(0, 30) + labs(title = "Run 1")
-
-get_RS_data("final_data/onePartner_female_sterility",
-            "1-4/rd_5_suppression_onePartner_femSterile",
-            "1: no rd",
-            "1: 5 rd") %>%
-  graph_RS_data()
-
-fig <- getTotalData("1-4/rd_5_suppression_onePartner_femSterile") %>%
-     clean_sterility(., number_partners = "rd 5") %>%
-  filter(mcProb %in% c(0, 0.3)) %>%
-  group_by(Generation, mcProb, fitCost, Run, numPartners) %>%
-  summarize(Count = sum(Count)) %>%
-  ggplot(aes(x = Generation, y = Count, group = interaction(fitCost, mcProb, Run), color = fitCost)) +
-  geom_line(size = 0.8) +
-  facet_wrap(~mcProb, ncol = 3) + #,
-             #labeller = as_labeller(c(`1` = "One Partner",
-            #                          `5` = "Five Partners",
-            #                          `20` = "Twenty Partners"))) +
   labs(y = "Total Population",
-       color = "Fitness Cost") +
-  ylim(0, 10000) +
-  scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
+       title = "Linear scale") +
   theme_light() +
-  #xlim(0, 30) +
-  scale_colour_manual(values = cbFun)
-fig
+  scale_y_continuous(labels = label_math(.x %*% 10^7))
 
-allele_rd <- getAlleleData("1-4/rd_5_suppression_onePartner_femSterile") %>%
-  clean_sterility(., number_partners = 1) %>%
-  mutate(Allele = factor(Allele, levels = c("C", "A", "V", "W", "R", "X")))
-
-allele_rd %>% filter(fitCost == 0.15, mcProb == 0, Run == 1) %>%
-  ggplot(aes(x = Generation, y = Count, group = interaction(Sex, Run), color = Sex)) +
+logarithmic <- RS_data %>% ggplot(aes(x = Generation, y = Count, group = Run)) +
   geom_line() +
-  facet_wrap(~Allele) + xlim(0, 50) + labs(title = "Run 1, FC 15%")
-```
-
-Five and Twenty Partners
-```{r}
-fig <- getTotalData("1-4/rd_1_suppression_fivePartner_femSterile") %>%
-     clean_sterility(., number_partners = "rd 5") %>%
-  filter(mcProb %in% c(0, 0.3)) %>%
-  group_by(Generation, mcProb, fitCost, Run, numPartners) %>%
-  summarize(Count = sum(Count)) %>%
-  ggplot(aes(x = Generation, y = Count, group = interaction(fitCost, mcProb, Run), color = fitCost)) +
-  geom_line(size = 0.8) +
-  facet_wrap(~mcProb, ncol = 3) + #,
-             #labeller = as_labeller(c(`1` = "One Partner",
-            #                          `5` = "Five Partners",
-            #                          `20` = "Twenty Partners"))) +
-  labs(y = "Total Population, 5 partner",
-       color = "Fitness Cost") +
-  ylim(0, 10000) +
-  scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
+  labs(y = "Total Population",
+       title = "Log scale") +
   theme_light() +
-  #xlim(0, 30) +
-  scale_colour_manual(values = cbFun)
-fig
+  scale_y_continuous(trans = 'log10', 
+                     breaks = trans_breaks('log10', function(x) 10^x),
+                     labels = trans_format('log10', math_format(10^.x)))
 
-fig <- getTotalData("1-4/rd_1_suppression_twentyPartner_femSterile") %>%
-     clean_sterility(., number_partners = "rd 5") %>%
-  filter(mcProb %in% c(0, 0.3)) %>%
-  group_by(Generation, mcProb, fitCost, Run, numPartners) %>%
-  summarize(Count = sum(Count)) %>%
-  ggplot(aes(x = Generation, y = Count, group = interaction(fitCost, mcProb, Run), color = fitCost)) +
-  geom_line(size = 0.8) +
-  facet_wrap(~mcProb, ncol = 3) + #,
-             #labeller = as_labeller(c(`1` = "One Partner",
-            #                          `5` = "Five Partners",
-            #                          `20` = "Twenty Partners"))) +
-  labs(y = "Total Population, 20 partner",
-       color = "Fitness Cost") +
-  ylim(0, 10000) +
-  scale_y_continuous(breaks=c(0, 2500, 5000, 7500, 10000)) +
+rs_alleles <- RS_data %>% 
+  group_by(Generation, Allele) %>%
+  summarize(Frequency = mean(percent)) %>%
+  ggplot(aes(x = Generation, y = Frequency, color = Allele)) +
+  geom_line(linewidth = 0.8) +
+  labs(y = "Allele Frequency",
+       title = "Allele Frequencies") +
   theme_light() +
-  #xlim(0, 30) +
-  scale_colour_manual(values = cbFun)
-fig
+  scale_color_manual(limits = c("A", "C", "R", "V", "W"),
+    labels = c("Target Cleavable\n Allele", "Cleaved Alleles", "Cleavage-Resistant\n Allele", "ClvR", "Non-ClvR"),
+    values = cbFun) +
+  guides(color = guide_legend(override.aes = list(linewidth = 1)))
+
+panel <- ggarrange(linear, logarithmic, rs_alleles, nrow = 3) %>%
+  annotate_figure(fig.lab = "Suppression with 100/100,000,000 resistant individuals", top = " ")
+
 ```
 
 
-# drive with benefit, vs. drive without benefit, one partner
+### Combine Modification and Suppression
 
-onePartner_heatmap_fb_drive
-onePartner_heatmap_fb_nodrive
+```{r, fig.height=6, fig.width=8}
+fig_height = 6
+fig_width = 8
+fig_height = knitr::opts_current$get("fig.height")
+fig_width = knitr::opts_current$get("fig.width")
 
-```{r}
-total_replacement_drive <- getTotalData("12-15/mutation_data/onePartner_heatmap_fb_drive") %>%
-  clean_replacement(., number_partners = "drive")
+res_combo <- ggarrange(null_plot, res_cas9, res_res + theme(legend.position = "none"), null_plot,
+                       nrow = 4, heights = c(0.1, 1.1, 1, 0.1), labels = c("", "a", "b", "")) %>%
+  annotate_figure(fig.lab = "Modification with 200 / 10,000 resistant individuals")
 
-total_replacement_nodrive <- getTotalData("12-15/mutation_data/onePartner_heatmap_fb_nodrive") %>%
-  clean_replacement(number_partners = "no drive")
+resmod_panel <- ggarrange(res_combo, as_ggplot(get_legend(res_res)), ncol = 2, widths = c(5, 1.5))
 
-total_replacement_Dnodrive <- getTotalData("12-15/mutation_data/onePartner_heatmap_fb_diploidnodrive") %>%
-  clean_replacement(number_partners = "D no drive")
+rs_alleles2 <- RS_data %>% 
+  group_by(Generation, Allele) %>%
+  summarize(Frequency = mean(percent)) %>%
+  ggplot(aes(x = Generation, y = Frequency, color = Allele)) +
+  geom_line(linewidth = 0.8) +
+  labs(y = "Allele Frequency",
+       title = "Allele Frequencies") +
+  theme_light() +
+  scale_color_manual(limits = c("A", "C", "R", "V", "W"),
+    labels = c("Target Cleavable Allele", "Cleaved Alleles", "Cleavage-Resistant Allele", "ClvR", "Non-ClvR"),
+    values = cbFun) +
+  guides(color = guide_legend(override.aes = list(linewidth = 1))) +
+  theme(legend.position = "bottom",
+        legend.justification = "right")
 
-# combine and make sexless
-total_replacement <- rbind(total_replacement_drive, total_replacement_nodrive) %>% 
-  rbind(., total_replacement_Dnodrive) %>%
-  group_by(Generation, fitCost, introF, Run, numPartners) %>%
-  summarise(Count = sum(Count)) %>%
-  rename(IF = fitCost, FC = introF)
+title_size <- 10
 
-total_replacement
+ressup <- ggarrange(linear + theme(plot.title = element_text(size=title_size)),
+                              logarithmic + theme(plot.title = element_text(size=title_size)),
+                              rs_alleles + theme(legend.position = "none",
+                                                 plot.title = element_text(size=title_size)), ncol = 3)
+                              #labels = c("c", "", "")) %>%
 
-# get sexless allele data for each
-allele_replacement_drive <- getAlleleData("12-15/mutation_data/onePartner_heatmap_fb_drive") %>%
-  clean_replacement(number_partners = "drive")
+ressup_panel1 <- ggarrange(ressup, as_ggplot(get_legend(rs_alleles)), ncol = 2, widths = c(5, 1.5))
 
-allele_replacement_nodrive <- getAlleleData("12-15/mutation_data/onePartner_heatmap_fb_nodrive") %>%
-  clean_replacement(number_partners = "no drive")
+ressup_panel <- ggarrange(null_plot, ressup_panel1, nrow = 2, heights = c(0.13, 1),
+                          labels = c("c", "")) %>% 
+  annotate_figure(fig.lab = "Suppression with 100/100,000,000 resistant individuals", top = " ", )
 
-allele_replacement_Dnodrive <- getAlleleData("12-15/mutation_data/onePartner_heatmap_fb_diploidnodrive") %>%
-  clean_replacement(number_partners = "D no drive")
+resistance_mod_sup <- ggarrange(resmod_panel,
+          annotate_figure(null_plot,
+                          fig.lab = "Suppression with 100/100,000,000 resistant individuals"),
+                                            # hjust = 1.1, size = 10)), 
+          ressup_panel1, 
+          nrow = 3, heights = c(2,0.17, 1), labels = c("", "c", "")) %>%
+  annotate_figure(fig.lab = "Resistance mutation", top = " ")
+  
+#resistance_mod_sup
 
-# combine and make sexless
-allele_replacement <- rbind(allele_replacement_drive, allele_replacement_nodrive) %>%
-  rbind(., allele_replacement_Dnodrive) %>% 
-  group_by(Generation, fitCost, introF, Allele, Run, numPartners) %>%
-  summarise(Allele_Count = sum(Count)) %>%
-  rename(IF = fitCost, FC = introF)
-
-allele_replacement
+#ggsave("res_modAndSuppression_int10_mod.svg", plot = resistance_mod_sup,
+#       height = fig_height, width = fig_width, bg = "white")
+#ggsave("res_modAndSuppression_int10_mod.png", plot = resistance_mod_sup,
+#       height = fig_height, width = fig_width, bg = "white")
 ```
 
-Preliminary graphs
-```{r}
-allele_replacement %>%
-  filter(Allele == "C", numPartners == "drive") %>%
-  filter(Generation == 50) %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, FC, IF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  ggplot(aes(x = FC, y = IF, fill = avg_percentage)) +
-  geom_tile() + labs(title = "percentage at generation 50, with drive")
+```{r, fig.height=6, fig.width=8}
+ressup <- ggarrange(linear + theme(plot.title = element_text(size=title_size)),
+                              logarithmic + theme(plot.title = element_text(size=title_size)),
+                              rs_alleles + theme(legend.position = "none",
+                                                 plot.title = element_text(size=title_size)), ncol = 3)
 
-allele_replacement %>%
-  filter(Allele == "C", numPartners == "drive") %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  filter(percentage == 1) %>%
-  group_by(FC, IF, numPartners, Allele, Run) %>%
-  summarise(min_gen = min(Generation)) %>%
-  group_by(FC, IF, numPartners, Allele) %>%
-  summarise(avg_generation = mean(min_gen)) %>%
-  ggplot(aes(x = FC, y = IF, fill = avg_generation)) +
-  geom_tile() + labs(title = "fixation time with drive")
+ressup <- ggarrange(null_plot, ressup, nrow = 2,
+                    heights = c(0.2, 1),
+                    labels = c("c", ""))
 
-allele_replacement %>%
-  filter(Allele == "C", numPartners == "no drive") %>%
-  filter(Generation == 50) %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, FC, IF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  ggplot(aes(x = FC, y = IF, fill = avg_percentage)) +
-  geom_tile() + labs(title = "percentage at generation 50, with NO drive (haploid fc)")
+ressup_panel1 <- ggarrange(ressup, as_ggplot(get_legend(rs_alleles)), ncol = 2, widths = c(5, 1.5))
 
-allele_replacement %>%
-  filter(Allele == "C", numPartners == "D no drive") %>%
-  filter(Generation == 50) %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, FC, IF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  ggplot(aes(x = FC, y = IF, fill = avg_percentage)) +
-  geom_tile() + labs(title = "percentage at generation 50, with NO drive (diploid fc)")
+res_combo2 <- ggarrange(null_plot, res_cas9, res_res + theme(legend.position = "none"), null_plot,
+                       nrow = 4, heights = c(0.1, 1.1, 1, 0.1), labels = c("", "a", "b", "")) %>%
+  annotate_figure(fig.lab = " ", fig.lab.face = "bold")
 
-## difference in fixation time
-#allele_replacement %>%
-#  filter(Allele == "C") %>%
-#  merge(., total_replacement) %>%
-#  mutate(percentage = Allele_Count / (2*Count)) %>%
-#  filter(percentage == 1) %>%
-#  group_by(FC, IF, numPartners, Allele, Run) %>%
-#  summarise(min_gen = min(Generation)) %>%
-#  group_by(FC, IF, numPartners, Allele) %>%
-#  summarise(avg_generation = mean(min_gen)) %>%
-#  pivot_wider(names_from = numPartners, values_from = avg_generation) %>%
-#  mutate(Difference = `no drive` - `drive`) %>%
-#  ggplot(aes(x=fitCost, y=introFreq, fill= Difference)) + 
-#  geom_tile() +
-#  labs(title = "difference in fixation time, no drive - drive")
+resmod_panel2 <- ggarrange(res_combo2, as_ggplot(get_legend(res_res)), ncol = 2, widths = c(5, 1.5))
 
-allele_replacement %>%
-  filter(IF == 0.3) %>%
-  filter(FC < -0.5) %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, FC, IF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  filter(avg_percentage != 0) %>%
-  ggplot(aes(x = Generation, y = avg_percentage, group = FC, color = FC,
-             fill = FC)) +
-  geom_line(size = 0.8) +
-  scale_linetype_binned() +
-  facet_grid(Allele~numPartners)
+resmodsup_bold <- ggarrange(null_plot, resmod_panel2, null_plot, #ressup,
+          annotate_figure(ressup_panel1, fig.lab = " ", fig.lab.face = "bold"),
+          nrow = 4,
+          labels = c("Modification with a 1% frequency of resistant alleles", "",  
+                     "",
+                     ""), #Suppression 5x10 ^-7resistant individuals", ""),
+          heights = c(0.15, 2, 0.13, 1),
+          hjust = 0) +
+  geom_text(aes(x=0, y=0.32, label = #'bold(10^-7)'),
+                  'bold("Suppression with a 5x10"^"-7" ~ "frequency of resistant alleles")'),
+            parse = TRUE, size = 4.8, hjust = 0)
 
-allele_replacement %>% 
-  filter(Allele == "C", numPartners %in% c("D no drive", "drive")) %>%
-  filter(Generation == 50) %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, FC, IF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  pivot_wider(names_from = numPartners, values_from = avg_percentage) %>%
-  mutate(Difference = `drive` - `D no drive`) %>%
-  ggplot(aes(x = FC, y = IF, fill = Difference)) +
-  geom_tile() + labs(title = "difference in drive and no drive")
+resmodsup_bold
 
-allele_replacement %>% 
-  filter(Allele == "C", numPartners %in% c("D no drive", "drive")) %>%
-  filter(FC == -0.3, IF == 0.05) %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, FC, IF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  ggplot(aes(x = Generation, y = avg_percentage, color = numPartners)) +
-  geom_line(size = 0.8) + ylim(0, NA) +
-  labs(title = "5% intro frequency, fitness benefit 30%")
-
-
-allele_replacement %>% 
-  filter(Allele == "C", numPartners %in% c("D no drive", "drive")) %>%
-  filter(FC == -0.1, IF == 0.05) %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, FC, IF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  ggplot(aes(x = Generation, y = avg_percentage, color = numPartners)) +
-  geom_line(size = 0.8) + ylim(0, NA) +
-  labs(title = "5% intro frequency, fitness benefit 10%")
-
-allele_replacement %>%
-  filter(numPartners == "D no drive") %>%
-  filter(FC == -0.3, IF == 0.05) %>%
-  merge(., total_replacement) %>%
-  mutate(percentage = Allele_Count / (2*Count)) %>%
-  group_by(Generation, FC, IF, numPartners, Allele) %>%
-  summarise(avg_percentage = mean(percentage)) %>%
-  ggplot(aes(x = Generation, y = avg_percentage, color = numPartners)) +
-  geom_line(size = 0.8) + ylim(0, NA) +
-  facet_wrap(~Allele)
+ggsave("final_figures/Figure_8-resistance_modification_suppression.svg", plot = resmodsup_bold,
+       height = fig_height, width = fig_width, bg = "white")
+ggsave("final_figures/Figure_8-resistance_modification_suppression.png", plot = resmodsup_bold,
+       height = fig_height, width = fig_width, bg = "white")
 ```
 
 
+## Loci Jumping
 
-Graphing stuff - stolen from W&S heatmaps
-```{r}
-heatmap4_raw <- read.csv("alleleSail_data/10-31/EvI_fb/last_gen_O.csv") %>%
-  mutate(type = "germline")
+```{r, fig.height = 5, fig.width = 6}
+######## Do ClvR Locus Jumping ##########
 
-heatmap4_raw_som <- rbind(heatmap4_raw_som, heatmap4_raw_mc, heatmap4_raw, heatmap4_raw_gmc)
+CLJ_total <- getTotalData("arabidopsis_data/JumpingClvR_intVariable_femSterile_onePartner") %>%
+  separate(Run, c(NA, "intro", NA, "fitCost", "Run", NA), sep = "_", remove = T) %>%
+  group_by(Generation, intro, fitCost, Run) %>%
+    summarise(Count = sum(Count))
 
-heatmap4_processed_som <- heatmap4_raw_som %>%
-  group_by(introFreq, fitCost, run, type) %>%
-  summarise(O_count = sum(Count),
-            totalPop = sum(totalPop)) %>%
-  mutate(percent_o = O_count/totalPop) %>%
-  group_by(introFreq, fitCost, type) %>%
-  summarise(`Avg. % Homozygous` = 1-mean(percent_o)) %>%
-  ungroup()
+linear_CLJ <- CLJ_total %>% 
+  mutate(Count2 = Count / 10^7) %>%
+  ggplot(aes(x = Generation, y = Count2, group = Run)) +
+  geom_line() +
+  labs(y = "Total Population",
+       title = "Linear scale") +
+  theme_light() +
+  scale_y_continuous(labels = label_math(.x %*% 10^7))
 
-heatmap4_processed_som %>%
-  filter(!(fitCost == 0), !(type == "somatic")) %>%
-  pivot_wider(names_from = type, values_from = `Avg. % Homozygous`) %>%
-  mutate(Difference = `somatic mc` - `germline`) %>%
-  ggplot(aes(x=fitCost, y=introFreq, fill= Difference)) + 
-  geom_tile() +
-  scale_fill_viridis(direction = -1) +
-  labs(title = "Average % of homozygous edited individuals, difference of Somatic mc & germline") +
-  xlim(NA, 0.1)
+logarithmic_CLJ <- CLJ_total %>% ggplot(aes(x = Generation, y = Count, group = Run)) +
+  geom_line() +
+  labs(y = "Total Population",
+       title = "Log scale") +
+  theme_light() +
+  scale_y_continuous(trans = 'log10', 
+                     breaks = trans_breaks('log10', function(x) 10^x),
+                     labels = trans_format('log10', math_format(10^.x)))
+
+clj <- ggarrange(linear_CLJ, logarithmic_CLJ, ncol = 2, labels = c("a", "b"))
+
+######## Do Fertility Jumping ##########
+
+FJ_total <- getTotalData("arabidopsis_data/JumpingFertility_intVariable_femSterile_onePartner") %>%
+  separate(Run, c(NA, "intro", NA, "fitCost", "Run", NA), sep = "_", remove = T) %>%
+  group_by(Generation, intro, fitCost, Run) %>%
+    summarise(Count = sum(Count))
+
+linear_FJ <- FJ_total %>% 
+  mutate(Count2 = Count / 10^7) %>%
+  ggplot(aes(x = Generation, y = Count2, group = Run)) +
+  geom_line() +
+  labs(y = "Total Population",
+       title = "Linear scale") +
+  theme_light() +
+  scale_y_continuous(labels = label_math(.x %*% 10^7))
+
+logarithmic_FJ <- FJ_total %>% ggplot(aes(x = Generation, y = Count, group = Run)) +
+  geom_line() +
+  labs(y = "Total Population",
+       title = "Log scale") +
+  theme_light() +
+  scale_y_continuous(trans = 'log10', 
+                     breaks = trans_breaks('log10', function(x) 10^x),
+                     labels = trans_format('log10', math_format(10^.x)))
+
+fj <- ggarrange(linear_FJ, logarithmic_FJ, ncol = 2, labels = c("c", "d"))
+
+jumping_fig <- ggarrange(null_plot, clj, null_plot, fj,
+          nrow = 4, labels = c("ClvR locus transposition", "", "Fertility locus transposition", ""),
+          heights = c(0.15, 1, 0.13, 1),
+          hjust = 0)
+
+jumping_fig
+
+ggsave("final_figures/X_Figure_10-jumping_loci.svg", plot = jumping_fig,
+       height = fig_height, width = fig_width, bg = "white")
+ggsave("final_figures/X_Figure_10-jumping_loci.png", plot = jumping_fig,
+       height = fig_height, width = fig_width, bg = "white")
 ```
 
