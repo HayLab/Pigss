@@ -1920,7 +1920,8 @@ def demo_function():
     file_name = "demo"
 
     num_reps = 3
-    pop_max = 1000
+    pop_max = 100
+    num_gens = 5
         
     for maternal_carryover in [0, 0.3]:
         for clvr_cost in [0, 0.1]:
@@ -1931,7 +1932,7 @@ def demo_function():
                     [1, ['V'], clvr_cost, []]] # haploid fitness cost
 
             run_label = f'mc_prob_{maternal_carryover}_FC_{clvr_cost}'
-            run_stochastic_sim(ALLELES, num_reps, NUM_GENS, intro,
+            run_stochastic_sim(ALLELES, num_reps, num_gens, intro,
                             f_c, hf_c, s_c, num_partners, 
                             mut_flag= "NA", run_label= run_label,
                             file_name= file_name, k=pop_max, mc_prob=maternal_carryover)

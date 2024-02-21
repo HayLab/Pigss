@@ -391,7 +391,7 @@ def fathers_cross_mothers(Simulation, father_counts, mother_counts, num_haplos):
     return pairs
 
 ##########################################
-######### population modification ########
+###### resistant pop. suppression ########
 ##########################################
 
 def RS_o001percent_femalesterile_onePartner(run):
@@ -556,6 +556,86 @@ def RS_o0001percent_int20_femalesterile_onePartner_LONG(run):
                             file_name= file_name, k=K, mc_prob=maternal_carryover)
 
     return None
+
+##########################################
+########## ClvR at third locus ###########
+##########################################
+
+
+def clvr_loci_jumping(run):
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'A'], ['V', 'W1'], ['V1', 'W2']] # D is a second cleaver
+    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
+    s_c = [[0, ['V', 'V'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "JumpingClvR_intVariable_femSterile_onePartner"
+
+    K = 100000000 # 100, 000, 000
+
+    num_reps_test = 1
+    num_gens_test = 30
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W1', 'W2'], 1.0, [['V'], ['V1']]],
+                    [1, ['C', 'W1', 'W2'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+            for intro_freq in [0.000001, 0.005]:
+                intro = [[1, 3, 0.1-intro_freq], [0, 6, intro_freq/2], [1, 6, intro_freq/2]] # sex, genotype, frequency
+                # 3 should be cc vv ww and 6 should be cc vw wv
+
+                run_label = f'IF_{intro_freq}_FC_{clvr_cost}_{run}'
+                run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
+                                f_c, hf_c, s_c, num_partners, 
+                                mut_flag= "NA", run_label= run_label,
+                                file_name= file_name, k=K, mc_prob=maternal_carryover)
+
+    return None
+
+##########################################
+######## Fertility at third locus ########
+##########################################
+
+def fertility_jumping(run):
+    """runs simulations for multiple maternal carryovers and various haploid 
+    fitness costs, for mating 1 female to 1 male"""
+    num_partners = 1
+    alleles = [['C', 'A'], ['V', 'W'], ['F', 'N']] # F for fertility, N for non-fertile
+    # genotype 0 = cc vv, genotype 23 = ra, ww (wt resistant)
+    s_c = [[0, ['V', 'V', 'N', 'N'], 1.0]] #sex, alleles, fert_cost - females homozygous sterile
+    f_c = []
+
+    file_name = "JumpingFertility_intVariable_femSterile_onePartner"
+
+    K = 100000000 # 1, 000, 000
+
+    num_reps_test = 1
+    num_gens_test = 30
+
+    for maternal_carryover in [0]: #, 0.3]:
+        for clvr_cost in [0]: #, 0.05, 0.1, 0.15]:
+            # fitness costs take the form [sex, required alleles, fitness cost, rescueAlleles]
+            hf_c = [[0, ['C', 'W'], 1.0, [['V'], ['V1']]],
+                    [1, ['C', 'W'], 1.0, []],
+                    [0, ['V'], clvr_cost, []], # haploid fitness cost
+                    [1, ['V'], clvr_cost, []]] # haploid fitness cost
+            for intro_freq in [0.000001, 0.005]:
+                intro = [[1, 3, 0.1], [0, -2, intro_freq/2], [1, -2, intro_freq/2]] # sex, genotype, frequency
+                # 3 should be cc vv ww and -2 should be aa ww fn
+
+                run_label = f'IF_{intro_freq}_FC_{clvr_cost}_{run}'
+                run_stochastic_sim(alleles, num_reps_test, num_gens_test, intro,
+                                f_c, hf_c, s_c, num_partners, 
+                                mut_flag= "NA", run_label= run_label,
+                                file_name= file_name, k=K, mc_prob=maternal_carryover)
+
+    return None
+
 
 def main():
     #RS_o01percent_femalesterile_onePartner_MC()
