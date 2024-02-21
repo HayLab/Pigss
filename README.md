@@ -2,6 +2,10 @@
 
 Plants (Individuals) and Gametes Stochastic Simulation. Code for simulating plant populations using a Cleave and Rescue gamete killer
 
+Demo Here: 
+
+ [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github//MicycleJ/Pigss/blob/main/Pigss_demo.ipynb)
+
 ## How to use
 
 To run the simulations, the files Simulation.py and PlantClasses.py are required, as well as an empty folder called "final_data"
