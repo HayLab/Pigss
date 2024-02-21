@@ -59,14 +59,20 @@ The faster simulation file, called "Simulation_fast_small.py" features its own s
     python Simulation_fast_small.py function_name 2
     python Simulation_fast_small.py function_name 3
 
-Or, when using a server or method of bat
+Or, when using a server such as slurm:
+
+    for i in $(seq 1 10)
+    do
+        srun --ntasks 1 python3 Simulation_fast_small.py clvr_loci_jumping $i &
+    done
+    wait
 
 A list of the large-population functions are as follows:
 
 Name | Behavior | File name (if applicable) | Figure data was used for (if applicable)
---- | --- | --- | ---
+-- | ----- | -- | --
 RS_o0001percent_int10_femalesterile_onePartner | A release of 10% ClvR into a population of 100,000,000, along with a release of 0.0001% individuals heterozygous for a resistant mutation, which is uncleavable by ClvR. Only runs for 30 generations | resistant_suppression_into0001percent_int10_fs_onePartner | Fig. 8 c
-RS_o0001percent_int20_femalesterile_onePartner | As above, but for a release of 20% ClvR | resistant_suppression_into0001percent_int20_fs_onePartner | NA
+RS_o0001percent_int20_femalesterile_onePartner | The same as RS_o0001percent_int10_femalesterile_onePartner, but for a release of 20% ClvR | resistant_suppression_into0001percent_int20_fs_onePartner | NA
 RS_o0001percent_int10_femalesterile_onePartner_LONG, RS_o0001percent_int20_femalesterile_onePartner_LONG | The same as the above two functions, but instead of running for 30 generations, runs for 100 | resistant_suppression_into0001percent_int10_fs_onePartner_LONG, resistant_suppression_into0001percent_int20_fs_onePartner_LONG | NA
 clvr_loci_jumping |
 fertility_jumping |
