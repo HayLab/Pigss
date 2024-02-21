@@ -559,9 +559,9 @@ class StochasticSim:
         # randomly choose offspring for ALL FATHERS
         pollen = rng.choice(self.haplotypes, size=num_offspring*father_count, p = poss_gamete_chances)
 
-        # remove empty sets
-        while [] in pollen:
-            pollen.remove([])
+        # remove empty sets - I think we can remove this ?
+        #while [] in pollen:
+        #    pollen.remove([])
 
         # split pollen into subsets
         pollen_sliced = [list(pollen[num_offspring*x:num_offspring*(x+1)]) for x in range(father_count)]
@@ -700,8 +700,8 @@ class StochasticSim:
         pollen = rng.choice(self.haplotypes, size=num_offspring*father_count, p = poss_gamete_chances)
 
         # remove empty sets
-        while [] in pollen:
-            pollen.remove([])
+        # while [] in pollen:
+        #     pollen.remove([])
 
         # split pollen into subsets
         pollen_sliced = [list(pollen[num_offspring*x:num_offspring*(x+1)]) for x in range(father_count)]
