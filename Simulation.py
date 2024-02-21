@@ -1920,7 +1920,7 @@ def demo_function():
     file_name = "demo"
 
     num_reps = 3
-    pop_max = 100
+    pop_max = 1000
         
     for maternal_carryover in [0, 0.3]:
         for clvr_cost in [0, 0.1]:
