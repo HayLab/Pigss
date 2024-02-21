@@ -8,7 +8,7 @@ Demo Here:
 
 ## How to use
 
-To run the simulations, the files Simulation.py and PlantClasses.py are required, as well as an empty folder called "final_data"
+To run the simulations, the files Simulation.py and SuppressorMutationClasses.py are required, as well as an empty folder called "final_data"
 
 This module was written using Python 3.7, and requires the following python packages:
 * pandas
