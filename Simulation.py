@@ -1948,7 +1948,7 @@ def get_func_list():
     
     quiet_functions = ["get_func_list", "run_stochastic_sim", "stochastic_sim",
                        "main", "product", "product_index", "all_option",
-                       "run_all_func", "demo_function"]
+                       "run_all_func", "demo_function", "get_int_from_gene"]
 
     print("Checking ...")
     
@@ -1959,6 +1959,17 @@ def get_func_list():
         print(index + 1, func)
 
     return func_names
+
+def get_int_from_gene(alleles, desired_set):
+    """ given a list of alleles, returns the position of the desired genotype"""
+    diploid_loci = [list(product(allele, allele)) for allele in alleles]
+    genotypes = list(product(*diploid_loci))
+
+    for index, gene in enumerate(genotypes):
+        if gene == desired_set:
+            return index
+    
+    return None
 
 def run_all_func():
     func_names = get_func_list()

@@ -78,8 +78,8 @@ Name | Behavior | File name (if applicable) | Figure data was used for (if appli
 RS_o0001percent_int10_femalesterile_onePartner | A release of 10% ClvR into a population of 100,000,000, along with a release of 0.0001% individuals heterozygous for a resistant mutation, which is uncleavable by ClvR. Only runs for 30 generations | resistant_suppression_into0001percent_int10_fs_onePartner | Fig. 8 c
 RS_o0001percent_int20_femalesterile_onePartner | The same as RS_o0001percent_int10_femalesterile_onePartner, but for a release of 20% ClvR | resistant_suppression_into0001percent_int20_fs_onePartner | NA
 RS_o0001percent_int10_femalesterile_onePartner_LONG, RS_o0001percent_int20_femalesterile_onePartner_LONG | The same as the above two functions, but instead of running for 30 generations, runs for 100 | resistant_suppression_into0001percent_int10_fs_onePartner_LONG, resistant_suppression_into0001percent_int20_fs_onePartner_LONG | NA
-clvr_loci_jumping |
-fertility_jumping |
+clvr_loci_jumping | A release of 10% ClvR into a population of 100,000,000, where the ClvR is inserted into a female fertility locus, leading to suppression. Either 0.0001% or 0.5% of those released individuals have had one of their ClvR re-located to a third locus which has no impact on fertility. | JumpingClvR_intVariable_femSterile_onePartner | Extended Data Fig. 10
+fertility_jumping | A release of 10% ClvR into a population of 100,000,000, where the ClvR is inserted into a female fertility locus, leading to suppression. Additionally, we release either 0.0001% or 0.5% wildtype individuals whose fertility loci has 'jumped' to a third locus. The fertility locus at this third site allows for ClvR homozygotes to be fertile | JumpingFertility_intVariable_femSterile_onePartner | Extended Data Fig. 10
 
 For efficiency, each allele is assigned a single letter. Here is an explanation of which allele represents what. Those with asterisks are not always used. Loci go from left to right, and in the case of suppression the "higher-numbered" loci, or the loci "farthest right" is always the fertility site:
 
