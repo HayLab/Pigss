@@ -94,7 +94,7 @@ Allele | Locus | Meaning
 "R"* | 3 | A Rescue-only allele, made of gRNAs + Cargo + Rescue, for Recombination. Will cause cleavage if in the presence of "V"
 "X"* | 3 | The non-rescue, wildtype allele
 
-![diagram showing the mapping of allele letters to what alleles they represent, which locus they live at, and their behavior](./additional_media/allele_mapping.png)
+![diagram showing the mapping of allele letters to what alleles they represent, which locus they live at, and their behavior](./additional_media/allele_mapping_blocks.png)
 
 ## How it works
 
