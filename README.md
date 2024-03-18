@@ -4,7 +4,7 @@ Plants (Individuals) and Gametes Stochastic Simulation. Code for simulating plan
 
 Demo Here: 
 
- [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github//MicycleJ/Pigss/blob/main/additional_media/Pigss_demo.ipynb)
+ [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HayLab/Pigss/blob/main/additional_media/Pigss_demo.ipynb)
 
 ## How to use
 
