@@ -6,6 +6,11 @@ Demo Here:
 
  [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HayLab/Pigss/blob/main/additional_media/Pigss_demo.ipynb)
 
+# Table of Contents
+1. [How to use](#How-to-use)
+2. [How it works](#How-it-works)
+3. [Additional Information](#Additional-Information)
+
 ## How to use
 
 To run the simulations, the files Simulation.py and SuppressorMutationClasses.py are required, as well as an empty folder called "final_data"
