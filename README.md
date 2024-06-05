@@ -4,7 +4,7 @@ Plants (Individuals) and Gametes Stochastic Simulation. Code for simulating plan
 
 Demo Here: 
 
- [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HayLab/Pigss/blob/main/additional_media/Pigss_demo.ipynb)
+ [![Colab Demo Link](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HayLab/Pigss/blob/main/additional_media/Pigss_demo.ipynb)
 
 # Table of Contents
 1. [How to use](#How-to-use)
@@ -99,7 +99,7 @@ Allele | Locus | Meaning
 "R"* | 3 | A Rescue-only allele, made of gRNAs + Cargo + Rescue, for Recombination. Will cause cleavage if in the presence of "V"
 "X"* | 3 | The non-rescue, wildtype allele
 
-![diagram showing the mapping of allele letters to what alleles they represent, which locus they live at, and their behavior](./additional_media/allele_mapping_blocks.png)
+![diagram showing the mapping of allele letters to what alleles they represent, which locus they live at, and their behavior. This is the same as the information above, but in a visual form](./additional_media/allele_mapping_blocks.png)
 
 ## How it works
 
@@ -107,7 +107,7 @@ This model uses three classes, stored in PlantClasses.py, and two main functions
 
 <!-- TODO: Add more detail to above paragraph -->
 
-![flowchart showing the process or run_stochastic_sim. The steps are in a circle, with adults of a generation being represented by purple rectangles, the eggs and sperm represented by blue, and diploid offspring which have not yet reached maturity are colored red](./additional_media/flowchart_3.png)
+![flowchart showing the process or run_stochastic_sim. The steps are in a circle, with adults of a generation being represented by purple rectangles, the eggs and sperm represented by blue, and diploid offspring which have not yet reached maturity are colored red. This is a visual representation of the information above](./additional_media/flowchart_3.png)
 
 Each generation starts with a pool of adult individuals, shown at the top in purple. This information is stored as a list where each index represents a possible genotype, and the associated value represents the number of individuals of that genotype. 
 1. For each mating, a single mother produces a pool of ovules and multiple males produce a single pool of pollen.
